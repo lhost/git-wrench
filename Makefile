@@ -23,8 +23,17 @@ BOLD_BLUE=\\033[${BOLD};${BLUE}m
 BOLD_CYAN=\\033[${BOLD};${CYAN}m
 # }}}
 
+UV = uv run
+
 install:
 	uv sync --group dev
+	$(UV) pre-commit install
+
+update::
+	$(UV) pre-commit autoupdate
+
+.git/hooks/pre-commit:
+	$(UV) pre-commit install
 
 test::
 
