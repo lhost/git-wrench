@@ -57,6 +57,7 @@ format:
 test-format:
 	$(UV) ruff format --check .
 
+
 test-lint:
 	$(UV) ruff check .
 

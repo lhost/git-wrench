@@ -1,12 +1,16 @@
 import sys
 
+import typer
 
-def main() -> int:
-    """Main execution point for git-wrench."""
-    print("🔧 git-wrench is ready for work!")
-
-    return 0
+from git_wrench.commands import status, sync, workspace
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+app = typer.Typer()
+
+app.command()(sync)
+app.command()(status)
+app.command()(workspace)
+
+
+def main():
+    return app(sys.argv[1:])
