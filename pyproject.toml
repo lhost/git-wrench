@@ -24,6 +24,33 @@ build-backend = "hatchling.build"
 [project.scripts]
 git-wrench = "git_wrench.cli:main"
 
+[tool.ruff]
+line-length = 140
+target-version = "py313"
+
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "W",   # warnings
+    "I",   # import sorting
+    "B",   # bugbear
+    "UP",  # pyupgrade
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+
 [tool.hatch.build.targets.wheel]
 packages = ["git_wrench"]
 

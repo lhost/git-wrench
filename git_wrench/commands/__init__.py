@@ -22,6 +22,6 @@ def _discover() -> None:
     """Import every public command module so their @command decorators fire."""
     pkg_path = str(Path(__file__).parent)
     pkg_name = __name__
-    for finder, module_name, _ in pkgutil.iter_modules([pkg_path]):
+    for _finder, module_name, _ in pkgutil.iter_modules([pkg_path]):
         if not module_name.startswith("_"):
             importlib.import_module(f"{pkg_name}.{module_name}")

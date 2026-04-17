@@ -19,7 +19,6 @@ from pathlib import Path
 
 from . import config as cfg
 
-
 # ── model ─────────────────────────────────────────────────────────────────────
 
 
@@ -37,7 +36,7 @@ class Workspace:
         return {"name": self.name, "path": self.path}
 
     @classmethod
-    def from_dict(cls, d: dict[str, str]) -> "Workspace":
+    def from_dict(cls, d: dict[str, str]) -> Workspace:
         return cls(name=d.get("name", ""), path=d.get("path", ""))
 
     def __str__(self) -> str:
@@ -57,7 +56,7 @@ class WorkspaceManager:
     # ── factory ───────────────────────────────────────────────────────────────
 
     @classmethod
-    def load(cls) -> "WorkspaceManager":
+    def load(cls) -> WorkspaceManager:
         """Load workspaces from the config file on disk."""
         conf = cfg.load()
         entries = cfg.workspace_list(conf)
@@ -120,9 +119,7 @@ class WorkspaceManager:
 
     def save(self) -> None:
         """Persist current workspace list to config.toml."""
-        self._conf.setdefault("workspaces", {})["list"] = [
-            ws.to_dict() for ws in self._workspaces
-        ]
+        self._conf.setdefault("workspaces", {})["list"] = [ws.to_dict() for ws in self._workspaces]
         cfg.save(self._conf)
 
     def reload(self) -> None:

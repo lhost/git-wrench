@@ -22,10 +22,10 @@ from __future__ import annotations
 
 import os
 import tomllib
-import tomli_w
 from pathlib import Path
 from typing import Any
 
+import tomli_w
 
 # ── defaults ──────────────────────────────────────────────────────────────────
 

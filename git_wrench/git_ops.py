@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
 
-
 # ── data model ────────────────────────────────────────────────────────────────
 
 
@@ -118,14 +117,7 @@ def sync_repo(repo: RepoInfo, *, fetch_prune: bool = True, stash: bool = False) 
     # optionally stash local changes first
     if stash and repo.dirty:
         rc, _, err = _run(
-            [
-                "git",
-                "stash",
-                "push",
-                "--include-untracked",
-                "-m",
-                "git-wrench auto-stash",
-            ],
+            ["git", "stash", "push", "--include-untracked", "-m", "git-wrench auto-stash"],
             repo.path,
         )
         if rc != 0:

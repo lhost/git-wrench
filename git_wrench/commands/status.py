@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from git_wrench.registry import command
 from git_wrench.commands._ansi import BOLD, CYAN, DIM, RED, YELLOW
+from git_wrench.registry import command
 
 
 @command("status", help="Show branch / ahead-behind / dirty state for all repos")
@@ -53,8 +53,6 @@ def run(args: list[str]) -> int:
         ahead_s = str(repo.ahead) if repo.ahead else DIM("0")
         behind_s = str(repo.behind) if repo.behind else DIM("0")
         branch_col = CYAN(repo.branch) if repo.branch not in ("?", "") else RED("?")
-        print(
-            f"  {str(repo.path):<48}  {branch_col:<20} {ahead_s:<5} {behind_s:<5} {dirty_flag}"
-        )
+        print(f"  {str(repo.path):<48}  {branch_col:<20} {ahead_s:<5} {behind_s:<5} {dirty_flag}")
 
     return 0

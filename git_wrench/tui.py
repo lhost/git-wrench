@@ -28,9 +28,8 @@ Navigation
 from __future__ import annotations
 
 import curses
-from pathlib import Path
-
 import importlib.metadata
+from pathlib import Path
 
 from . import config as cfg
 from . import git_ops
@@ -86,16 +85,14 @@ def _attr(pair: int, bold: bool = False, dim: bool = False) -> int:
     return a
 
 
-def _addstr_clipped(
-    win: "curses.window", y: int, x: int, text: str, attr: int, max_w: int
-) -> None:
+def _addstr_clipped(win: curses.window, y: int, x: int, text: str, attr: int, max_w: int) -> None:
     """Write *text* starting at (y, x), clipping to *max_w* chars."""
     if max_w <= 0:
         return
     win.addstr(y, x, text[:max_w], attr)
 
 
-def _fill_line(win: "curses.window", y: int, attr: int) -> None:
+def _fill_line(win: curses.window, y: int, attr: int) -> None:
     """Paint the entire row *y* of *win* with *attr*."""
     _, w = win.getmaxyx()
     try:
@@ -107,18 +104,14 @@ def _fill_line(win: "curses.window", y: int, attr: int) -> None:
 # ── modal dialog ─────────────────────────────────────────────────────────────
 
 
-def _dialog(
-    stdscr: "curses.window", title: str, lines: list[str], buttons: list[str] = ("OK",)
-) -> int:
+def _dialog(stdscr: curses.window, title: str, lines: list[str], buttons: list[str] | None = None) -> int:
     """Show a centred modal dialog, return the index of the chosen button."""
+    if buttons is None:
+        buttons = ["OK"]
     h, w = stdscr.getmaxyx()
-    content_width = max((len(l) for l in lines), default=0)
-    dialog_w = max(
-        content_width + 4, max(len(b) for b in buttons) * 3 + 4, len(title) + 4, 40
-    )
-    dialog_h = (
-        len(lines) + 6
-    )  # title + separator + lines + separator + buttons + border
+    content_width = max((len(line) for line in lines), default=0)
+    dialog_w = max(content_width + 4, max(len(b) for b in buttons) * 3 + 4, len(title) + 4, 40)
+    dialog_h = len(lines) + 6  # title + separator + lines + separator + buttons + border
     dialog_y = max(0, (h - dialog_h) // 2)
     dialog_x = max(0, (w - dialog_w) // 2)
 
@@ -172,9 +165,7 @@ def _dialog(
 # ── input dialog (single text field) ─────────────────────────────────────────
 
 
-def _input_dialog(
-    stdscr: "curses.window", title: str, prompt: str, default: str = ""
-) -> str | None:
+def _input_dialog(stdscr: curses.window, title: str, prompt: str, default: str = "") -> str | None:
     """Return the entered string, or None if cancelled."""
     h, w = stdscr.getmaxyx()
     dialog_w = max(len(prompt) + 4, 50, len(title) + 4)
@@ -210,9 +201,7 @@ def _input_dialog(
             )
             win.move(4, field_x + min(len(value), field_w - 1))
 
-            _addstr_clipped(
-                win, 5, 2, "Enter=confirm  Esc=cancel", _attr(_P_DIM), dialog_w - 4
-            )
+            _addstr_clipped(win, 5, 2, "Enter=confirm  Esc=cancel", _attr(_P_DIM), dialog_w - 4)
             win.refresh()
 
             key = win.getch()
@@ -255,21 +244,17 @@ class ReposPanel:
         self.loading = False
         self.cursor = min(self.cursor, max(0, len(self.repos) - 1))
 
-    def draw(self, win: "curses.window", active: bool) -> None:
+    def draw(self, win: curses.window, active: bool) -> None:
         h, w = win.getmaxyx()
         win.erase()
 
         if self.loading:
-            _addstr_clipped(
-                win, h // 2, 2, "Loading repositories…", _attr(_P_WARN), w - 4
-            )
+            _addstr_clipped(win, h // 2, 2, "Loading repositories…", _attr(_P_WARN), w - 4)
             return
 
         if not self.repos:
             _addstr_clipped(win, 2, 2, "No repositories found.", _attr(_P_DIM), w - 4)
-            _addstr_clipped(
-                win, 3, 2, "Check your workspace paths in Config.", _attr(_P_DIM), w - 4
-            )
+            _addstr_clipped(win, 3, 2, "Check your workspace paths in Config.", _attr(_P_DIM), w - 4)
             return
 
         # column header
@@ -297,10 +282,7 @@ class ReposPanel:
             ahead_s = str(repo.ahead) if repo.ahead else "-"
             behind_s = str(repo.behind) if repo.behind else "-"
 
-            line = (
-                f"  {path_str:<46} {branch_str:<16} {ahead_s:>3} {behind_s:>3} "
-                f"{dirty_flag} {status_icon} {repo.message[:30]}"
-            )
+            line = f"  {path_str:<46} {branch_str:<16} {ahead_s:>3} {behind_s:>3} {dirty_flag} {status_icon} {repo.message[:30]}"
 
             base_attr = _attr(_P_CURSOR) if is_cur else curses.A_NORMAL
             _fill_line(win, row, base_attr)
@@ -318,11 +300,9 @@ class ReposPanel:
         if len(self.repos) > visible:
             pct = int(self.offset / max(1, len(self.repos) - visible) * 100)
             hint = f" {self.offset + 1}-{min(self.offset + visible, len(self.repos))}/{len(self.repos)} ({pct}%)"
-            _addstr_clipped(
-                win, h - 1, w - len(hint) - 1, hint, _attr(_P_DIM), len(hint) + 1
-            )
+            _addstr_clipped(win, h - 1, w - len(hint) - 1, hint, _attr(_P_DIM), len(hint) + 1)
 
-    def handle_key(self, key: int, stdscr: "curses.window") -> str | None:
+    def handle_key(self, key: int, stdscr: curses.window) -> str | None:
         """Return an action string or None."""
         if key == curses.KEY_UP:
             self.cursor = max(0, self.cursor - 1)
@@ -337,7 +317,7 @@ class ReposPanel:
             return "refresh"
         return None
 
-    def sync_one(self, stdscr: "curses.window") -> None:
+    def sync_one(self, stdscr: curses.window) -> None:
         if not self.repos:
             return
         repo = self.repos[self.cursor]
@@ -351,7 +331,7 @@ class ReposPanel:
         result_lines = [str(repo.path), "", repo.message[:60] or "Done."]
         _dialog(stdscr, "Sync result", result_lines)
 
-    def sync_all(self, stdscr: "curses.window") -> None:
+    def sync_all(self, stdscr: curses.window) -> None:
         if not self.repos:
             return
         h, w = stdscr.getmaxyx()
@@ -359,9 +339,7 @@ class ReposPanel:
 
         for i, repo in enumerate(self.repos):
             # show a simple progress overlay
-            prog_win = curses.newwin(
-                5, min(60, w - 4), h // 2 - 2, max(0, (w - 60) // 2)
-            )
+            prog_win = curses.newwin(5, min(60, w - 4), h // 2 - 2, max(0, (w - 60) // 2))
             prog_win.bkgd(" ", _attr(_P_DIALOG))
             prog_win.border()
             _addstr_clipped(
@@ -372,12 +350,8 @@ class ReposPanel:
                 _attr(_P_DIALOG, bold=True),
                 56,
             )
-            _addstr_clipped(
-                prog_win, 2, 2, _short_path(repo.path, 54), _attr(_P_DIALOG), 56
-            )
-            _addstr_clipped(
-                prog_win, 3, 2, "Press any key to abort…", _attr(_P_DIM), 56
-            )
+            _addstr_clipped(prog_win, 2, 2, _short_path(repo.path, 54), _attr(_P_DIALOG), 56)
+            _addstr_clipped(prog_win, 3, 2, "Press any key to abort…", _attr(_P_DIM), 56)
             prog_win.nodelay(True)
             prog_win.refresh()
 
@@ -431,7 +405,7 @@ class WorkspacesPanel:
     def _items(self) -> list[Workspace]:
         return self.mgr.all()
 
-    def draw(self, win: "curses.window", active: bool) -> None:
+    def draw(self, win: curses.window, active: bool) -> None:
         h, w = win.getmaxyx()
         entries = self._items()
         win.erase()
@@ -461,7 +435,7 @@ class WorkspacesPanel:
         hint = "  n new   Enter/e edit   d delete"
         _addstr_clipped(win, h - 1, 0, hint, _attr(_P_DIM), w - 1)
 
-    def handle_key(self, key: int, stdscr: "curses.window") -> bool:
+    def handle_key(self, key: int, stdscr: curses.window) -> bool:
         """Return True if config was modified."""
         entries = self._items()
         if key == curses.KEY_UP:
@@ -478,7 +452,7 @@ class WorkspacesPanel:
                 return self._delete(stdscr, entries[self.cursor])
         return False
 
-    def _add(self, stdscr: "curses.window") -> bool:
+    def _add(self, stdscr: curses.window) -> bool:
         name = _input_dialog(stdscr, "Add workspace", "Name:", default="")
         if not name:
             return False
@@ -494,7 +468,7 @@ class WorkspacesPanel:
         self.mgr.save()
         return True
 
-    def _edit(self, stdscr: "curses.window", ws: Workspace) -> bool:
+    def _edit(self, stdscr: curses.window, ws: Workspace) -> bool:
         name = _input_dialog(stdscr, "Edit workspace", "Name:", default=ws.name)
         if name is None:
             return False
@@ -512,7 +486,7 @@ class WorkspacesPanel:
         self.mgr.save()
         return True
 
-    def _delete(self, stdscr: "curses.window", ws: Workspace) -> bool:
+    def _delete(self, stdscr: curses.window, ws: Workspace) -> bool:
         choice = _dialog(
             stdscr,
             "Delete workspace",
@@ -543,14 +517,10 @@ class ConfigPanel:
         self.items: list[tuple[str, str, str]] = [
             ("Recurse depth", str(sync.get("recurse_depth", 2)), "recurse_depth"),
             ("Fetch prune", str(sync.get("fetch_prune", True)), "fetch_prune"),
-            (
-                "Stash before pull",
-                str(sync.get("stash_before_pull", False)),
-                "stash_before_pull",
-            ),
+            ("Stash before pull", str(sync.get("stash_before_pull", False)), "stash_before_pull"),
         ]
 
-    def draw(self, win: "curses.window", active: bool) -> None:
+    def draw(self, win: curses.window, active: bool) -> None:
         h, w = win.getmaxyx()
         win.erase()
 
@@ -568,7 +538,7 @@ class ConfigPanel:
         path_note = f"  Config file: {cfg.config_path()}"
         _addstr_clipped(win, h - 2, 0, path_note, _attr(_P_DIM), w - 1)
 
-    def handle_key(self, key: int, stdscr: "curses.window") -> bool:
+    def handle_key(self, key: int, stdscr: curses.window) -> bool:
         """Return True if config was modified."""
         if key == curses.KEY_UP:
             self.cursor = max(0, self.cursor - 1)
@@ -578,17 +548,12 @@ class ConfigPanel:
             return self._edit_item(stdscr)
         return False
 
-    def _edit_item(self, stdscr: "curses.window") -> bool:
+    def _edit_item(self, stdscr: curses.window) -> bool:
         label, value, key = self.items[self.cursor]
         sync = self.conf.setdefault("sync", {})
 
         if key == "recurse_depth":
-            new_val = _input_dialog(
-                stdscr,
-                "Edit recurse depth",
-                "Max directory depth (1-5):",
-                default=value,
-            )
+            new_val = _input_dialog(stdscr, "Edit recurse depth", "Max directory depth (1-5):", default=value)
             if new_val is not None:
                 try:
                     sync["recurse_depth"] = max(1, min(5, int(new_val)))
@@ -640,12 +605,12 @@ _HELP_LINES = [
 
 
 class HelpPanel:
-    def draw(self, win: "curses.window", active: bool) -> None:
+    def draw(self, win: curses.window, active: bool) -> None:
         win.erase()
         for i, (line, pair) in enumerate(_HELP_LINES):
             _addstr_clipped(win, i + 1, 2, line, _attr(pair), win.getmaxyx()[1] - 4)
 
-    def handle_key(self, key: int, _stdscr: "curses.window") -> None:
+    def handle_key(self, key: int, _stdscr: curses.window) -> None:
         pass
 
 
@@ -659,7 +624,7 @@ def run_tui(conf: dict) -> None:
     curses.wrapper(_tui_main, conf)
 
 
-def _tui_main(stdscr: "curses.window", conf: dict) -> None:
+def _tui_main(stdscr: curses.window, conf: dict) -> None:
     _init_colors()
     curses.curs_set(0)
     curses.set_escdelay(25)
@@ -683,18 +648,14 @@ def _tui_main(stdscr: "curses.window", conf: dict) -> None:
         x = 1
         for i, tab in enumerate(_TABS):
             label = f" {tab} "
-            attr = (
-                _attr(_P_TAB_SEL, bold=True) if i == active_tab else _attr(_P_TAB_NORM)
-            )
+            attr = _attr(_P_TAB_SEL, bold=True) if i == active_tab else _attr(_P_TAB_NORM)
             _addstr_clipped(stdscr, 0, x, label, attr, w - x - 1)
             x += len(label) + 1
 
         # right-aligned app name
         brand = f"git-wrench v{_VERSION}  "
         brand_x = max(x + 1, w - len(brand))
-        _addstr_clipped(
-            stdscr, 0, brand_x, brand, _attr(_P_TAB_NORM, bold=True), w - brand_x
-        )
+        _addstr_clipped(stdscr, 0, brand_x, brand, _attr(_P_TAB_NORM, bold=True), w - brand_x)
 
         # ── main area ─────────────────────────────────────────────────────────
         panel_h = max(0, h - 2)  # menu bar + status bar
@@ -710,9 +671,7 @@ def _tui_main(stdscr: "curses.window", conf: dict) -> None:
         # ── status bar ────────────────────────────────────────────────────────
         _fill_line(stdscr, h - 1, _attr(_P_STATUSB))
         if active_tab == 0:
-            hints = (
-                "  ↑↓ navigate   n new   Enter/e edit   d delete   Tab switch   q quit"
-            )
+            hints = "  ↑↓ navigate   n new   Enter/e edit   d delete   Tab switch   q quit"
         elif active_tab == 1:
             hints = "  ↑↓ navigate   Enter sync   a sync-all   r refresh   Tab switch   q quit"
         elif active_tab == 2:

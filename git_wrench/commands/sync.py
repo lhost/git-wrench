@@ -10,8 +10,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from git_wrench.registry import command
 from git_wrench.commands._ansi import BOLD, CYAN, DIM, GREEN, RED, YELLOW
+from git_wrench.registry import command
 
 
 @command("sync", help="Pull all repos in configured workspaces")
@@ -35,11 +35,7 @@ def run(args: list[str]) -> int:
     roots = [override_path] if override_path else cfg.workspace_paths(conf)
 
     if not roots:
-        print(
-            RED(
-                "No workspace paths configured. Run 'git-wrench' interactively to add one."
-            )
-        )
+        print(RED("No workspace paths configured. Run 'git-wrench' interactively to add one."))
         return 1
 
     depth = int(sync_cfg.get("recurse_depth", 2))

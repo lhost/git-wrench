@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import sys
 
-from git_wrench.registry import command
 from git_wrench.commands._ansi import BOLD, CYAN, DIM, GREEN, RED, YELLOW
+from git_wrench.registry import command
 
 
 @command("workspace", help="Manage workspaces (add, rename, remove)")
@@ -76,9 +76,7 @@ def _add(mgr, args: list[str]) -> int:
 
 def _rename(mgr, args: list[str]) -> int:
     if len(args) < 2:
-        print(
-            "Usage:  git-wrench workspace rename <old-name> <new-name>", file=sys.stderr
-        )
+        print("Usage:  git-wrench workspace rename <old-name> <new-name>", file=sys.stderr)
         return 1
     old, new = args[0], args[1]
     try:
