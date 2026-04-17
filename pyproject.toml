@@ -5,6 +5,7 @@ description = "terminal-based multi-repo git workspace manager"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "tomli-w>=1.2.0",
 ]
 
 [dependency-groups]
