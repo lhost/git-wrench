@@ -105,17 +105,25 @@ You can edit the file directly or use the **Config** tab in the TUI.
 ## Project layout
 
 ```
-git_wrench/
-├── commands/
+├── bin
+│   └── git-wrench         - executable script
+├── git_wrench
+│   ├── commands
+│   │   ├── _ansi.py
+│   │   ├── __init__.py
+│   │   ├── status.py
+│   │   ├── sync.py
+│   │   └── workspace.py
+│   ├── config.py          - TOML config load/save
+│   ├── git_ops.py         - repo discovery & git operations
 │   ├── __init__.py
-│   ├── sync.py
-│   ├── status.py
-│   └── workspace.py
-├── config.py      – TOML config load/save
-├── git_ops.py     – repo discovery & git operations
-├── commands.py    – CLI command implementations (sync, status)
-├── tui.py         – curses interactive interface
-├── main.py        – entry point / command dispatcher
-├── pyproject.toml - project metadata
-└── ...
+│   ├── registry.py
+│   ├── tui.py             - curses interactive interface
+│   └── workspace.py       - workspace management
+├── main.py                - CLI entrypoint
+├── Makefile               - Makefile for development
+├── pyproject.toml         - project metadata
+├── README.md
+├── tests
+│ └── test_cli.py
 ```
