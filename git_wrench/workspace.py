@@ -14,30 +14,66 @@ A Workspace is a named root directory that is searched for git repositories.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
 
 from . import config as cfg
 
-# ── model ─────────────────────────────────────────────────────────────────────
+# ── models ────────────────────────────────────────────────────────────────────
+
+ServerType = Literal["github", "gitlab", "gitolite"]
+VALID_SERVER_TYPES: tuple[str, ...] = ("github", "gitlab", "gitolite")
+
+
+@dataclass
+class GitServer:
+    """A remote git server associated with a workspace."""
+
+    type: str  # "github" | "gitlab" | "gitolite"
+    name: str  # short identifier, e.g. "origin"
+    url: str  # e.g. "git.example.com" or "https://github.com"
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "server_type": self.type,
+            "server_name": self.name,
+            "server_url": self.url,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, str]) -> GitServer:
+        return cls(
+            type=d.get("server_type", ""),
+            name=d.get("server_name", ""),
+            url=d.get("server_url", ""),
+        )
+
+    def __str__(self) -> str:
+        return f"{self.name}  ({self.type})  {self.url}"
 
 
 @dataclass
 class Workspace:
     name: str
     path: str  # stored as-is (may contain ~); expand with .resolved_path
+    servers: list[GitServer] = field(default_factory=list)
 
     @property
     def resolved_path(self) -> Path:
         """Return the path expanded and resolved to an absolute Path."""
         return Path(self.path).expanduser().resolve()
 
-    def to_dict(self) -> dict[str, str]:
-        return {"name": self.name, "path": self.path}
+    def to_dict(self) -> dict:
+        d: dict = {"name": self.name, "path": self.path}
+        if self.servers:
+            d["servers"] = [s.to_dict() for s in self.servers]
+        return d
 
     @classmethod
-    def from_dict(cls, d: dict[str, str]) -> Workspace:
-        return cls(name=d.get("name", ""), path=d.get("path", ""))
+    def from_dict(cls, d: dict) -> Workspace:
+        servers = [GitServer.from_dict(s) for s in d.get("servers", [])]
+        return cls(name=d.get("name", ""), path=d.get("path", ""), servers=servers)
 
     def __str__(self) -> str:
         return f"{self.name}  ({self.path})"
@@ -88,6 +124,46 @@ class WorkspaceManager:
         ws = Workspace(name=name, path=path)
         self._workspaces.append(ws)
         return ws
+
+    # ── server mutations ──────────────────────────────────────────────────────
+
+    def add_server(
+        self,
+        workspace_name: str,
+        server_type: str,
+        server_name: str,
+        server_url: str,
+    ) -> GitServer:
+        """Add a git server to a workspace.  Raises ValueError on bad input."""
+        if server_type not in VALID_SERVER_TYPES:
+            raise ValueError(f"Unknown server type '{server_type}'. Valid types: {', '.join(VALID_SERVER_TYPES)}")
+        ws = self.get(workspace_name)
+        if ws is None:
+            raise ValueError(f"Workspace '{workspace_name}' not found.")
+        for s in ws.servers:
+            if s.name == server_name:
+                raise ValueError(f"Server '{server_name}' already exists in workspace '{workspace_name}'.")
+        server = GitServer(type=server_type, name=server_name, url=server_url)
+        ws.servers.append(server)
+        return server
+
+    def remove_server(self, workspace_name: str, server_name: str) -> GitServer:
+        """Remove a git server from a workspace.  Raises ValueError if not found."""
+        ws = self.get(workspace_name)
+        if ws is None:
+            raise ValueError(f"Workspace '{workspace_name}' not found.")
+        for s in ws.servers:
+            if s.name == server_name:
+                ws.servers.remove(s)
+                return s
+        raise ValueError(f"Server '{server_name}' not found in workspace '{workspace_name}'.")
+
+    def list_servers(self, workspace_name: str) -> list[GitServer]:
+        """Return the servers configured for *workspace_name*."""
+        ws = self.get(workspace_name)
+        if ws is None:
+            raise ValueError(f"Workspace '{workspace_name}' not found.")
+        return list(ws.servers)
 
     def rename(self, old_name: str, new_name: str) -> Workspace:
         """Rename a workspace.  Raises ValueError if not found or name taken."""

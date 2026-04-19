@@ -6,6 +6,9 @@ Usage:
   git-wrench workspace add   <name> <path>
   git-wrench workspace rename <old-name> <new-name>
   git-wrench workspace remove <name>
+  git-wrench workspace <name> list-servers
+  git-wrench workspace <name> add-server --type <type> <server-name> <url>
+  git-wrench workspace <name> remove-server <server-name>
 """
 
 from __future__ import annotations
@@ -16,7 +19,7 @@ from git_wrench.commands._ansi import BOLD, CYAN, DIM, GREEN, RED, YELLOW
 from git_wrench.registry import command
 
 
-@command("workspace", help="Manage workspaces (add, rename, remove)")
+@command("workspace", help="Manage workspaces (add, rename, remove, add-server…)")
 def run(args: list[str]) -> int:
     from git_wrench.workspace import WorkspaceManager
 
@@ -34,9 +37,24 @@ def run(args: list[str]) -> int:
     if sub in ("remove", "rm", "delete"):
         return _remove(mgr, rest)
 
+    # workspace <name> <server-sub-command> …
+    workspace_name = sub
+    if rest:
+        server_sub = rest[0]
+        server_args = rest[1:]
+        if server_sub in ("add-server",):
+            return _add_server(mgr, workspace_name, server_args)
+        if server_sub in ("remove-server", "rm-server", "delete-server"):
+            return _remove_server(mgr, workspace_name, server_args)
+        if server_sub in ("list-servers", "list-server", "ls-servers", "ls-server"):
+            return _list_servers(mgr, workspace_name)
+
     print(
         f"git-wrench workspace: unknown sub-command '{sub}'.\n"
-        "Usage:  workspace list | add <name> <path> | rename <old> <new> | remove <name>",
+        "Usage:  workspace list | add <name> <path> | rename <old> <new> | remove <name>\n"
+        "        workspace <name> list-servers\n"
+        "        workspace <name> add-server --type <type> <server-name> <url>\n"
+        "        workspace <name> remove-server <server-name>",
         file=sys.stderr,
     )
     return 1
@@ -98,6 +116,74 @@ def _remove(mgr, args: list[str]) -> int:
         ws = mgr.remove(name)
         mgr.save()
         print(GREEN(f"Removed workspace '{ws.name}' ({ws.path})"))
+        return 0
+    except ValueError as e:
+        print(RED(str(e)), file=sys.stderr)
+        return 1
+
+
+# ── server sub-commands ───────────────────────────────────────────────────────
+
+
+def _list_servers(mgr, workspace_name: str) -> int:
+    try:
+        servers = mgr.list_servers(workspace_name)
+    except ValueError as e:
+        print(RED(str(e)), file=sys.stderr)
+        return 1
+
+    if not servers:
+        print(YELLOW(f"No servers configured for workspace '{workspace_name}'."))
+        print(DIM(f"  Add one with:  git-wrench workspace {workspace_name} add-server --type <type> <name> <url>"))
+        return 0
+
+    print(BOLD(f"  {'Name':<20}"), BOLD(f"{'Type':<12}"), BOLD("URL"))
+    print("  " + "─" * 60)
+    for s in servers:
+        print(CYAN(f"  {s.name:<20}"), f"{s.type:<12}", s.url)
+    return 0
+
+
+def _add_server(mgr, workspace_name: str, args: list[str]) -> int:
+    """Parse:  [--type <type>] <server-name> <url>"""
+    server_type = "github"
+    rest = list(args)
+
+    # consume --type flag
+    if len(rest) >= 2 and rest[0] == "--type":
+        server_type = rest[1]
+        rest = rest[2:]
+
+    if len(rest) < 2:
+        print(
+            f"Usage:  git-wrench workspace {workspace_name} add-server --type <type> <server-name> <url>",
+            file=sys.stderr,
+        )
+        return 1
+
+    server_name, server_url = rest[0], rest[1]
+    try:
+        server = mgr.add_server(workspace_name, server_type, server_name, server_url)
+        mgr.save()
+        print(GREEN(f"Added server '{server.name}' ({server.type}) → {server.url} to workspace '{workspace_name}'"))
+        return 0
+    except ValueError as e:
+        print(RED(str(e)), file=sys.stderr)
+        return 1
+
+
+def _remove_server(mgr, workspace_name: str, args: list[str]) -> int:
+    if not args:
+        print(
+            f"Usage:  git-wrench workspace {workspace_name} remove-server <server-name>",
+            file=sys.stderr,
+        )
+        return 1
+    server_name = args[0]
+    try:
+        server = mgr.remove_server(workspace_name, server_name)
+        mgr.save()
+        print(GREEN(f"Removed server '{server.name}' from workspace '{workspace_name}'"))
         return 0
     except ValueError as e:
         print(RED(str(e)), file=sys.stderr)

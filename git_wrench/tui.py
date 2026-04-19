@@ -35,7 +35,7 @@ from pathlib import Path
 from . import config as cfg
 from . import git_ops
 from .git_ops import RepoInfo, RepoStatus
-from .workspace import Workspace, WorkspaceManager
+from .workspace import VALID_SERVER_TYPES, GitServer, Workspace, WorkspaceManager
 
 try:
     _VERSION = importlib.metadata.version("git-wrench")
@@ -230,6 +230,96 @@ def _workspace_dialog(
                 return None
             elif key in (ord("\t"), curses.KEY_BTAB):
                 active = 1 - active
+            elif key in (curses.KEY_BACKSPACE, 127, 8):
+                if fields[active]:
+                    fields[active].pop()
+            elif 32 <= key < 256:
+                if len(fields[active]) < field_w - 1:
+                    fields[active].append(chr(key))
+    finally:
+        curses.curs_set(0)
+
+
+# ── server edit dialog (three fields: type + name + url) ─────────────────────
+
+
+def _server_dialog(
+    stdscr: curses.window,
+    title: str,
+    default_type: str = "github",
+    default_name: str = "",
+    default_url: str = "",
+) -> tuple[str, str, str] | None:
+    """Three-field dialog for type, name, url.
+
+    Returns (type, name, url) or None if cancelled.
+    """
+    h, w = stdscr.getmaxyx()
+    dialog_w = max(62, len(title) + 4)
+    dialog_h = 15  # border+title+sep + 3×(label+field) + sep+hint + border
+    dialog_y = max(0, (h - dialog_h) // 2)
+    dialog_x = max(0, (w - dialog_w) // 2)
+
+    win = curses.newwin(dialog_h, dialog_w, dialog_y, dialog_x)
+    win.bkgd(" ", _attr(_P_DIALOG))
+    win.keypad(True)
+    curses.curs_set(1)
+
+    type_hint = f"({'/'.join(VALID_SERVER_TYPES)})"
+    fields = [list(default_type), list(default_name), list(default_url)]
+    labels = [f"Type  {type_hint}:", "Name:", "URL:"]
+    rows = [3, 6, 9]
+    active = 0
+    field_w = dialog_w - 4
+
+    try:
+        while True:
+            win.clear()
+            win.border()
+            _addstr_clipped(win, 1, 2, title, _attr(_P_DIALOG, bold=True), dialog_w - 4)
+            win.hline(2, 1, curses.ACS_HLINE, dialog_w - 2)
+
+            for i in range(3):
+                label_row = rows[i] - 1
+                field_row = rows[i]
+                _addstr_clipped(win, label_row, 2, labels[i], _attr(_P_DIALOG), dialog_w - 4)
+                field_str = "".join(fields[i])
+                fattr = _attr(_P_CURSOR) if i == active else _attr(_P_DIALOG)
+                display = field_str + " " * (field_w - len(field_str))
+                _addstr_clipped(win, field_row, 2, display, fattr, field_w)
+
+            win.hline(dialog_h - 3, 1, curses.ACS_HLINE, dialog_w - 2)
+            _addstr_clipped(
+                win,
+                dialog_h - 2,
+                2,
+                "Tab=switch field  Enter=confirm  Esc=cancel",
+                _attr(_P_DIM),
+                dialog_w - 4,
+            )
+
+            cur_row = rows[active]
+            win.move(cur_row, 2 + min(len(fields[active]), field_w - 1))
+            win.refresh()
+
+            key = win.getch()
+            if key in (curses.KEY_ENTER, 10, 13):
+                stype = "".join(fields[0]).strip()
+                sname = "".join(fields[1]).strip()
+                surl = "".join(fields[2]).strip()
+                if stype and sname and surl:
+                    if stype not in VALID_SERVER_TYPES:
+                        _dialog(
+                            stdscr,
+                            "Invalid type",
+                            [f"Type must be one of: {', '.join(VALID_SERVER_TYPES)}"],
+                        )
+                        continue
+                    return stype, sname, surl
+            elif key == 27:  # Esc
+                return None
+            elif key in (ord("\t"), curses.KEY_BTAB):
+                active = (active + 1) % 3
             elif key in (curses.KEY_BACKSPACE, 127, 8):
                 if fields[active]:
                     fields[active].pop()
@@ -481,22 +571,40 @@ def _short_path(p: Path, max_len: int = 46) -> str:
 
 
 class WorkspacesPanel:
-    """List, add, edit and delete workspaces via WorkspaceManager."""
+    """List, add, edit and delete workspaces via WorkspaceManager.
+
+    Press  s  (or Enter when in server sub-view) to open the server list for
+    the selected workspace.  Press  Esc / Backspace  to return to the workspace
+    list from the server sub-view.
+    """
 
     def __init__(self, mgr: WorkspaceManager) -> None:
         self.mgr = mgr
         self.cursor = 0
         self._offset = 0
+        # server sub-view state
+        self._server_mode = False  # True = showing servers for _server_ws
+        self._server_ws: Workspace | None = None
+        self._srv_cursor = 0
+        self._srv_offset = 0
 
     def _items(self) -> list[Workspace]:
         return self.mgr.all()
 
+    # ── drawing ───────────────────────────────────────────────────────────────
+
     def draw(self, win: curses.window, active: bool) -> None:
+        if self._server_mode and self._server_ws is not None:
+            self._draw_servers(win, active)
+        else:
+            self._draw_workspaces(win, active)
+
+    def _draw_workspaces(self, win: curses.window, active: bool) -> None:
         h, w = win.getmaxyx()
         entries = self._items()
         win.erase()
 
-        hdr = f"  {'Name':<24} {'Path'}"
+        hdr = f"  {'Name':<24} {'Servers':>8}  {'Path'}"
         _addstr_clipped(win, 0, 0, hdr, _attr(_P_TITLE, bold=True), w)
 
         if not entries:
@@ -516,13 +624,69 @@ class WorkspacesPanel:
             is_cur = active and real_idx == self.cursor
             base_attr = _attr(_P_CURSOR) if is_cur else curses.A_NORMAL
             _fill_line(win, row, base_attr)
-            _addstr_clipped(win, row, 0, f"  {ws.name:<24} {ws.path}", base_attr, w - 1)
+            srv_count = f"[{len(ws.servers)}]" if ws.servers else "   "
+            _addstr_clipped(
+                win,
+                row,
+                0,
+                f"  {ws.name:<24} {srv_count:>8}  {ws.path}",
+                base_attr,
+                w - 1,
+            )
 
-        hint = "  n new   Enter select   e edit   d delete"
+        hint = "  n new   Enter select   e edit   d delete   s servers"
         _addstr_clipped(win, h - 1, 0, hint, _attr(_P_DIM), w - 1)
 
+    def _draw_servers(self, win: curses.window, active: bool) -> None:
+        assert self._server_ws is not None
+        h, w = win.getmaxyx()
+        win.erase()
+
+        ws = self._server_ws
+        hdr = f"  Servers — {ws.name}  ({ws.path})"
+        _addstr_clipped(win, 0, 0, hdr, _attr(_P_TITLE, bold=True), w)
+
+        servers = ws.servers
+        if not servers:
+            _addstr_clipped(win, 2, 2, "No servers configured.", _attr(_P_DIM), w - 4)
+            _addstr_clipped(win, 3, 2, "Press  n  to add one.", _attr(_P_DIM), w - 4)
+        else:
+            col_hdr = f"  {'Name':<20} {'Type':<12} URL"
+            _addstr_clipped(win, 1, 0, col_hdr, _attr(_P_DIM), w)
+
+            visible = h - 4
+            if self._srv_cursor < self._srv_offset:
+                self._srv_offset = self._srv_cursor
+            if self._srv_cursor >= self._srv_offset + visible:
+                self._srv_offset = self._srv_cursor - visible + 1
+
+            for i, srv in enumerate(servers[self._srv_offset : self._srv_offset + visible]):
+                real_idx = self._srv_offset + i
+                row = i + 2
+                is_cur = active and real_idx == self._srv_cursor
+                base_attr = _attr(_P_CURSOR) if is_cur else curses.A_NORMAL
+                _fill_line(win, row, base_attr)
+                _addstr_clipped(
+                    win,
+                    row,
+                    0,
+                    f"  {srv.name:<20} {srv.type:<12} {srv.url}",
+                    base_attr,
+                    w - 1,
+                )
+
+        hint = "  n new   d delete   Esc/Backspace back"
+        _addstr_clipped(win, h - 1, 0, hint, _attr(_P_DIM), w - 1)
+
+    # ── key handling ──────────────────────────────────────────────────────────
+
     def handle_key(self, key: int, stdscr: curses.window) -> str:
-        """Return an action string: 'select', 'edit', 'modified', or ''."""
+        """Return an action string: 'select', 'modified', or ''."""
+        if self._server_mode:
+            return self._handle_server_key(key, stdscr)
+        return self._handle_workspace_key(key, stdscr)
+
+    def _handle_workspace_key(self, key: int, stdscr: curses.window) -> str:
         entries = self._items()
         if key == curses.KEY_UP:
             self.cursor = max(0, self.cursor - 1)
@@ -542,7 +706,35 @@ class WorkspacesPanel:
             if entries:
                 if self._delete(stdscr, entries[self.cursor]):
                     return "modified"
+        elif key in (ord("s"), ord("S")):
+            if entries:
+                self._server_ws = entries[self.cursor]
+                self._server_mode = True
+                self._srv_cursor = 0
+                self._srv_offset = 0
         return ""
+
+    def _handle_server_key(self, key: int, stdscr: curses.window) -> str:
+        assert self._server_ws is not None
+        servers = self._server_ws.servers
+        if key in (27, curses.KEY_BACKSPACE, 127, 8):  # Esc or backspace → back
+            self._server_mode = False
+            self._server_ws = None
+            return ""
+        if key == curses.KEY_UP:
+            self._srv_cursor = max(0, self._srv_cursor - 1)
+        elif key == curses.KEY_DOWN:
+            self._srv_cursor = min(len(servers) - 1, self._srv_cursor + 1) if servers else 0
+        elif key in (ord("n"), ord("N")):
+            if self._add_server(stdscr):
+                return "modified"
+        elif key in (ord("d"), ord("D")):
+            if servers:
+                if self._delete_server(stdscr, servers[self._srv_cursor]):
+                    return "modified"
+        return ""
+
+    # ── workspace CRUD ────────────────────────────────────────────────────────
 
     def _add(self, stdscr: curses.window) -> bool:
         result = _workspace_dialog(stdscr, "Add workspace", default_path=str(Path.home()))
@@ -585,6 +777,40 @@ class WorkspacesPanel:
             return False
         self.mgr.remove(ws.name)
         self.cursor = min(self.cursor, max(0, len(self._items()) - 1))
+        self.mgr.save()
+        return True
+
+    # ── server CRUD ───────────────────────────────────────────────────────────
+
+    def _add_server(self, stdscr: curses.window) -> bool:
+        assert self._server_ws is not None
+        result = _server_dialog(stdscr, f"Add server — {self._server_ws.name}")
+        if result is None:
+            return False
+        stype, sname, surl = result
+        try:
+            self.mgr.add_server(self._server_ws.name, stype, sname, surl)
+        except ValueError as e:
+            _dialog(stdscr, "Error", [str(e)])
+            return False
+        self.mgr.save()
+        return True
+
+    def _delete_server(self, stdscr: curses.window, srv: GitServer) -> bool:
+        assert self._server_ws is not None
+        choice = _dialog(
+            stdscr,
+            "Delete server",
+            [f"Delete server '{srv.name}' ?", "", srv.url],
+            ["Delete", "Cancel"],
+        )
+        if choice != 0:
+            return False
+        self.mgr.remove_server(self._server_ws.name, srv.name)
+        self._srv_cursor = min(
+            self._srv_cursor,
+            max(0, len(self._server_ws.servers) - 1),
+        )
         self.mgr.save()
         return True
 
@@ -675,6 +901,13 @@ _HELP_LINES = [
     ("  n                   Add new workspace", _P_NORMAL),
     ("  Enter / e           Edit selected workspace", _P_NORMAL),
     ("  d                   Delete selected workspace", _P_NORMAL),
+    ("  s                   Manage servers for workspace", _P_NORMAL),
+    ("", _P_NORMAL),
+    ("Workspace servers sub-view", _P_DIM),
+    ("─" * 40, _P_DIM),
+    ("  n                   Add new server", _P_NORMAL),
+    ("  d                   Delete selected server", _P_NORMAL),
+    ("  Esc / Backspace     Return to workspace list", _P_NORMAL),
     ("", _P_NORMAL),
     ("Repos tab", _P_DIM),
     ("─" * 40, _P_DIM),
@@ -769,7 +1002,10 @@ def _tui_main(stdscr: curses.window, conf: dict) -> None:
         # ── status bar ────────────────────────────────────────────────────────
         _fill_line(stdscr, h - 1, _attr(_P_STATUSB))
         if active_tab == 0:
-            hints = "  ↑↓ navigate   n new   Enter select   e edit   d delete   ←→/Tab switch   q quit"
+            if workspaces_panel._server_mode:
+                hints = "  ↑↓ navigate   n new   d delete   Esc/BS back   ←→/Tab switch   q quit"
+            else:
+                hints = "  ↑↓ navigate   n new   Enter select   e edit   d delete   s servers   ←→/Tab   q quit"
         elif active_tab == 1:
             hints = "  ↑↓ navigate   Enter sync   a sync-all   r refresh   ←→/Tab switch   q quit"
         elif active_tab == 2:
