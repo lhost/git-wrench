@@ -19,10 +19,11 @@ Navigation
 ──────────
   Tab / Shift-Tab   : switch tabs
   ↑ / ↓            : move through list
-  Enter            : run action (sync selected repo, open config dialog …)
+  Enter            : select workspace (Workspaces tab) / sync repo (Repos tab) / edit (Config tab)
+  e / E            : edit workspace settings
   a / A            : sync ALL repos
   r / R            : refresh repo list
-  q / Q / Esc      : quit (or close dialog)
+  q / Q            : quit
 """
 
 from __future__ import annotations
@@ -162,6 +163,83 @@ def _dialog(stdscr: curses.window, title: str, lines: list[str], buttons: list[s
             return len(buttons) - 1
 
 
+# ── workspace edit dialog (two fields: name + path) ──────────────────────────
+
+
+def _workspace_dialog(
+    stdscr: curses.window,
+    title: str,
+    default_name: str = "",
+    default_path: str = "",
+) -> tuple[str, str] | None:
+    """Two-field dialog for name and path.  Returns (name, path) or None if cancelled."""
+    h, w = stdscr.getmaxyx()
+    dialog_w = max(60, len(title) + 4)
+    dialog_h = 11  # border + title + sep + name-label + name-field + path-label + path-field + sep + hint + border
+    dialog_y = max(0, (h - dialog_h) // 2)
+    dialog_x = max(0, (w - dialog_w) // 2)
+
+    win = curses.newwin(dialog_h, dialog_w, dialog_y, dialog_x)
+    win.bkgd(" ", _attr(_P_DIALOG))
+    win.keypad(True)
+    curses.curs_set(1)
+
+    fields = [list(default_name), list(default_path)]
+    labels = ["Name:", "Path:"]
+    rows = [3, 6]  # row of each input field
+    active = 0
+    field_w = dialog_w - 4
+
+    try:
+        while True:
+            win.clear()
+            win.border()
+            _addstr_clipped(win, 1, 2, title, _attr(_P_DIALOG, bold=True), dialog_w - 4)
+            win.hline(2, 1, curses.ACS_HLINE, dialog_w - 2)
+
+            for i in range(2):
+                label_row = rows[i] - 1
+                field_row = rows[i]
+                _addstr_clipped(win, label_row, 2, labels[i], _attr(_P_DIALOG), dialog_w - 4)
+                field_str = "".join(fields[i])
+                fattr = _attr(_P_CURSOR) if i == active else _attr(_P_DIALOG)
+                display = field_str + " " * (field_w - len(field_str))
+                _addstr_clipped(win, field_row, 2, display, fattr, field_w)
+
+            win.hline(dialog_h - 3, 1, curses.ACS_HLINE, dialog_w - 2)
+            _addstr_clipped(
+                win,
+                dialog_h - 2,
+                2,
+                "Tab=switch field  Enter=confirm  Esc=cancel",
+                _attr(_P_DIM),
+                dialog_w - 4,
+            )
+
+            cur_row = rows[active]
+            win.move(cur_row, 2 + min(len(fields[active]), field_w - 1))
+            win.refresh()
+
+            key = win.getch()
+            if key in (curses.KEY_ENTER, 10, 13):
+                name = "".join(fields[0]).strip()
+                path = "".join(fields[1]).strip()
+                if name and path:
+                    return name, path
+            elif key == 27:  # Esc
+                return None
+            elif key in (ord("\t"), curses.KEY_BTAB):
+                active = 1 - active
+            elif key in (curses.KEY_BACKSPACE, 127, 8):
+                if fields[active]:
+                    fields[active].pop()
+            elif 32 <= key < 256:
+                if len(fields[active]) < field_w - 1:
+                    fields[active].append(chr(key))
+    finally:
+        curses.curs_set(0)
+
+
 # ── input dialog (single text field) ─────────────────────────────────────────
 
 
@@ -232,11 +310,12 @@ class ReposPanel:
         self.cursor = 0
         self.offset = 0  # scroll offset
         self.loading = False
-        self._load_repos()
+        self.active_workspace: str | None = None  # None = no workspace selected yet
+        self._roots: list[Path] | None = None  # None = not yet selected
 
     def _load_repos(self) -> None:
         self.loading = True
-        roots = cfg.workspace_paths(self.conf)
+        roots = self._roots if self._roots is not None else cfg.workspace_paths(self.conf)
         depth = int(self.conf.get("sync", {}).get("recurse_depth", 2))
         self.repos = git_ops.find_repos(roots, max_depth=depth)
         for r in self.repos:
@@ -247,6 +326,11 @@ class ReposPanel:
     def draw(self, win: curses.window, active: bool) -> None:
         h, w = win.getmaxyx()
         win.erase()
+
+        if self.active_workspace is None:
+            _addstr_clipped(win, h // 2 - 1, 2, "No workspace selected.", _attr(_P_DIM), w - 4)
+            _addstr_clipped(win, h // 2, 2, "Go to Workspaces tab and press Enter to select one.", _attr(_P_DIM), w - 4)
+            return
 
         if self.loading:
             _addstr_clipped(win, h // 2, 2, "Loading repositories…", _attr(_P_WARN), w - 4)
@@ -304,6 +388,8 @@ class ReposPanel:
 
     def handle_key(self, key: int, stdscr: curses.window) -> str | None:
         """Return an action string or None."""
+        if self.active_workspace is None:
+            return None
         if key == curses.KEY_UP:
             self.cursor = max(0, self.cursor - 1)
         elif key == curses.KEY_DOWN:
@@ -432,33 +518,37 @@ class WorkspacesPanel:
             _fill_line(win, row, base_attr)
             _addstr_clipped(win, row, 0, f"  {ws.name:<24} {ws.path}", base_attr, w - 1)
 
-        hint = "  n new   Enter/e edit   d delete"
+        hint = "  n new   Enter select   e edit   d delete"
         _addstr_clipped(win, h - 1, 0, hint, _attr(_P_DIM), w - 1)
 
-    def handle_key(self, key: int, stdscr: curses.window) -> bool:
-        """Return True if config was modified."""
+    def handle_key(self, key: int, stdscr: curses.window) -> str:
+        """Return an action string: 'select', 'edit', 'modified', or ''."""
         entries = self._items()
         if key == curses.KEY_UP:
             self.cursor = max(0, self.cursor - 1)
         elif key == curses.KEY_DOWN:
             self.cursor = min(len(entries) - 1, self.cursor + 1) if entries else 0
-        elif key in (ord("n"), ord("N")):
-            return self._add(stdscr)
-        elif key in (curses.KEY_ENTER, 10, 13, ord("e"), ord("E")):
+        elif key in (curses.KEY_ENTER, 10, 13):
             if entries:
-                return self._edit(stdscr, entries[self.cursor])
+                return "select"
+        elif key in (ord("e"), ord("E")):
+            if entries:
+                if self._edit(stdscr, entries[self.cursor]):
+                    return "modified"
+        elif key in (ord("n"), ord("N")):
+            if self._add(stdscr):
+                return "modified"
         elif key in (ord("d"), ord("D")):
             if entries:
-                return self._delete(stdscr, entries[self.cursor])
-        return False
+                if self._delete(stdscr, entries[self.cursor]):
+                    return "modified"
+        return ""
 
     def _add(self, stdscr: curses.window) -> bool:
-        name = _input_dialog(stdscr, "Add workspace", "Name:", default="")
-        if not name:
+        result = _workspace_dialog(stdscr, "Add workspace", default_path=str(Path.home()))
+        if result is None:
             return False
-        path = _input_dialog(stdscr, "Add workspace", "Path:", default=str(Path.home()))
-        if not path:
-            return False
+        name, path = result
         try:
             self.mgr.add(name, path)
         except ValueError as e:
@@ -469,17 +559,15 @@ class WorkspacesPanel:
         return True
 
     def _edit(self, stdscr: curses.window, ws: Workspace) -> bool:
-        name = _input_dialog(stdscr, "Edit workspace", "Name:", default=ws.name)
-        if name is None:
+        result = _workspace_dialog(stdscr, "Edit workspace", default_name=ws.name, default_path=ws.path)
+        if result is None:
             return False
-        path = _input_dialog(stdscr, "Edit workspace", "Path:", default=ws.path)
-        if path is None:
-            return False
+        name, path = result
         try:
-            if name and name != ws.name:
+            if name != ws.name:
                 self.mgr.rename(ws.name, name)
-            if path and path != ws.path:
-                self.mgr.update_path(name or ws.name, path)
+            if path != ws.path:
+                self.mgr.update_path(name, path)
         except ValueError as e:
             _dialog(stdscr, "Error", [str(e)])
             return False
@@ -639,6 +727,7 @@ def _tui_main(stdscr: curses.window, conf: dict) -> None:
     panels = [workspaces_panel, repos_panel, config_panel, help_panel]
 
     active_tab = 0
+    _initial_load_done = False  # load repos after the first frame is painted
 
     while True:
         h, w = stdscr.getmaxyx()
@@ -657,10 +746,19 @@ def _tui_main(stdscr: curses.window, conf: dict) -> None:
         brand_x = max(x + 1, w - len(brand))
         _addstr_clipped(stdscr, 0, brand_x, brand, _attr(_P_TAB_NORM, bold=True), w - brand_x)
 
+        # ── workspace sub-bar (row 1, Repos tab only) ─────────────────────────
+        if active_tab == 1 and repos_panel.active_workspace is not None:
+            ws_bar = f"  Workspace: {repos_panel.active_workspace}"
+            _fill_line(stdscr, 1, _attr(_P_HEADER))
+            _addstr_clipped(stdscr, 1, 0, ws_bar, _attr(_P_HEADER, bold=True), w)
+            panel_y_offset = 2
+        else:
+            panel_y_offset = 1
+
         # ── main area ─────────────────────────────────────────────────────────
-        panel_h = max(0, h - 2)  # menu bar + status bar
+        panel_h = max(0, h - 1 - panel_y_offset)  # subtract sub-bar + status bar
         panel_w = max(0, w)
-        panel_y = 1
+        panel_y = panel_y_offset
         panel_x = 0
 
         # create a sub-window for the panel
@@ -671,39 +769,58 @@ def _tui_main(stdscr: curses.window, conf: dict) -> None:
         # ── status bar ────────────────────────────────────────────────────────
         _fill_line(stdscr, h - 1, _attr(_P_STATUSB))
         if active_tab == 0:
-            hints = "  ↑↓ navigate   n new   Enter/e edit   d delete   Tab switch   q quit"
+            hints = "  ↑↓ navigate   n new   Enter select   e edit   d delete   ←→/Tab switch   q quit"
         elif active_tab == 1:
-            hints = "  ↑↓ navigate   Enter sync   a sync-all   r refresh   Tab switch   q quit"
+            hints = "  ↑↓ navigate   Enter sync   a sync-all   r refresh   ←→/Tab switch   q quit"
         elif active_tab == 2:
-            hints = "  ↑↓ navigate   Enter edit   Tab switch   q quit"
+            hints = "  ↑↓ navigate   Enter edit   ←→/Tab switch   q quit"
         else:
-            hints = "  Tab switch   q quit"
+            hints = "  ←→/Tab switch   q quit"
         _addstr_clipped(stdscr, h - 1, 0, hints, _attr(_P_STATUSB), w)
 
         stdscr.refresh()
+
+        # ── deferred startup load (runs once, after first frame is visible) ───
+        if not _initial_load_done:
+            _initial_load_done = True
+            workspaces = mgr.all()
+            if workspaces:
+                first = workspaces[0]
+                repos_panel.active_workspace = first.name
+                repos_panel._roots = [first.resolved_path]
+                repos_panel._load_repos()
 
         # ── input ─────────────────────────────────────────────────────────────
         key = stdscr.getch()
 
         # global keys
-        if key in (ord("q"), ord("Q"), 27):
+        if key in (ord("q"), ord("Q")):
             break
-        elif key == ord("\t"):  # Tab
+        elif key in (ord("\t"), curses.KEY_RIGHT):  # Tab / →
             active_tab = (active_tab + 1) % len(_TABS)
             continue
-        elif key == curses.KEY_BTAB:  # Shift-Tab
+        elif key in (curses.KEY_BTAB, curses.KEY_LEFT):  # Shift-Tab / ←
             active_tab = (active_tab - 1) % len(_TABS)
             continue
 
         # per-panel keys
         panel = panels[active_tab]
         if active_tab == 0:
-            # Workspaces — WorkspaceManager saves itself; reload repos from updated paths
-            modified = panel.handle_key(key, stdscr)
-            if modified:
+            # Workspaces
+            action = panel.handle_key(key, stdscr)
+            if action == "select":
+                entries = workspaces_panel._items()
+                if entries:
+                    ws = entries[workspaces_panel.cursor]
+                    repos_panel.active_workspace = ws.name
+                    repos_panel._roots = [ws.resolved_path]
+                    repos_panel._load_repos()
+                    active_tab = 1
+            elif action == "modified":
                 mgr.reload()
                 repos_panel.conf = mgr._conf
-                repos_panel._load_repos()
+                if repos_panel._roots is None:
+                    repos_panel._load_repos()
         elif active_tab == 1:
             # Repos
             action = panel.handle_key(key, stdscr)
