@@ -638,7 +638,8 @@ class WorkspacesPanel:
         _addstr_clipped(win, h - 1, 0, hint, _attr(_P_DIM), w - 1)
 
     def _draw_servers(self, win: curses.window, active: bool) -> None:
-        assert self._server_ws is not None
+        if self._server_ws is None:
+            raise RuntimeError("_server_ws is not initialised")
         h, w = win.getmaxyx()
         win.erase()
 
@@ -715,7 +716,8 @@ class WorkspacesPanel:
         return ""
 
     def _handle_server_key(self, key: int, stdscr: curses.window) -> str:
-        assert self._server_ws is not None
+        if self._server_ws is None:
+            raise RuntimeError("_server_ws is not initialised")
         servers = self._server_ws.servers
         if key in (27, curses.KEY_BACKSPACE, 127, 8):  # Esc or backspace → back
             self._server_mode = False
@@ -783,7 +785,8 @@ class WorkspacesPanel:
     # ── server CRUD ───────────────────────────────────────────────────────────
 
     def _add_server(self, stdscr: curses.window) -> bool:
-        assert self._server_ws is not None
+        if self._server_ws is None:
+            raise RuntimeError("_server_ws is not initialised")
         result = _server_dialog(stdscr, f"Add server — {self._server_ws.name}")
         if result is None:
             return False
@@ -797,7 +800,8 @@ class WorkspacesPanel:
         return True
 
     def _delete_server(self, stdscr: curses.window, srv: GitServer) -> bool:
-        assert self._server_ws is not None
+        if self._server_ws is None:
+            raise RuntimeError("_server_ws is not initialised")
         choice = _dialog(
             stdscr,
             "Delete server",

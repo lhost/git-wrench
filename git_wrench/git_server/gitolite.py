@@ -27,7 +27,7 @@ class GitoliteAdapter(GitServerAdapter):
         Raises :class:`RuntimeError` if the SSH command fails.
         """
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603
                 ["ssh", self.url, "info"],
                 capture_output=True,
                 text=True,
