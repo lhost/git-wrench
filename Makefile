@@ -57,17 +57,28 @@ format:
 test-format:
 	$(UV) ruff format --check .
 
-
 test-lint:
 	$(UV) ruff check .
 
 fix:
 	$(UV) ruff check . --fix
 
-test:: test-pytest
+test-typecheck:
+	$(UV) pyright
+
 test-pytest:
 	$(UV) pytest
 
+test-coverage:
+	$(UV) pytest --cov
+
+test-security:
+	$(UV) bandit -r . -c pyproject.toml
+
+test-audit:
+	$(UV) pip-audit
+
+test:: test-format test-lint test-typecheck test-pytest test-security test-audit
 
 clean:
 	rm -rf .venv
@@ -77,5 +88,7 @@ clean:
 	find . -type d -name ".ruff_cache" -exec rm -rf {} +
 	find . -type d -name ".mypy_cache" -exec rm -rf {} +
 	find . -type d -name ".coverage" -exec rm -rf {} +
+	rm -rf htmlcov
+	rm -f .coverage
 
 # vim: fdm=marker

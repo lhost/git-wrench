@@ -14,6 +14,9 @@ dev = [
     "pre-commit-hooks>=6.0.0",
     "ruff>=0.15.8",
     "pytest>=8.0.0",
+    "pyright>=1.1.409",
+    "bandit>=1.9.4",
+    "pip-audit>=2.10.1",
 ]
 
 [build-system]
@@ -49,6 +52,38 @@ select = [
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.coverage.run]
+source = ["bin"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.bandit]
+exclude_dirs = [
+    ".venv",
+    "build",
+    "dist",
+    "tests",
+]
+
+[tool.bandit.assert_used]
+skips = ["*/tests/*"]
+
+[tool.pyright]
+include = ["git_wrench", "bin"]
+exclude = [
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+typeCheckingMode = "standard"
+
+[tool.pip-audit]
+ignore-vulns = []
 
 
 [tool.hatch.build.targets.wheel]
