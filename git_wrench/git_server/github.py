@@ -22,10 +22,16 @@ from .base import GitServerAdapter, RemoteRepo
 
 _DEFAULT_URL = "https://github.com"
 _API_URL = "https://api.github.com"
+_ALLOWED_SCHEMES = ("http://", "https://", "git://", "git+ssh://")
 
 
 class GitHubAdapter(GitServerAdapter):
     """Lists repositories for an authenticated user via the GitHub API."""
+
+    def __init__(self, url: str = _DEFAULT_URL) -> None:
+        super().__init__(url)
+        if not self.url.startswith(_ALLOWED_SCHEMES):
+            raise ValueError(f"GitHubAdapter requires an http/https/git/git+ssh URL, got: {self.url!r}")
 
     def list_repos(self) -> list[RemoteRepo]:
         """Return all repositories accessible with the configured token.
@@ -51,7 +57,7 @@ class GitHubAdapter(GitServerAdapter):
             if token:
                 req.add_header("Authorization", f"Bearer {token}")
             try:
-                with urllib.request.urlopen(req, timeout=15) as resp:
+                with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310
                     data: list[dict] = json.load(resp)
             except URLError as exc:
                 raise RuntimeError(f"GitHub API request failed: {exc}") from exc

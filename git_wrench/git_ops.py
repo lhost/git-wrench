@@ -4,7 +4,7 @@ Git repository discovery and operations.
 
 from __future__ import annotations
 
-import subprocess
+import subprocess  # nosec B404
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
@@ -73,7 +73,7 @@ def find_repos(roots: list[Path], max_depth: int = 2) -> list[RepoInfo]:
 
 def _run(args: list[str], cwd: Path) -> tuple[int, str, str]:
     """Run a git sub-command, return (returncode, stdout, stderr)."""
-    result = subprocess.run(  # nosec B603
+    result = subprocess.run(  # nosec B603 B607
         args,
         cwd=cwd,
         capture_output=True,

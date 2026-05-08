@@ -10,7 +10,7 @@ Gitolite responds to ``ssh <host> info`` with a list of accessible repos.
 
 from __future__ import annotations
 
-import subprocess
+import subprocess  # nosec B404
 
 from .base import GitServerAdapter, RemoteRepo
 
@@ -27,7 +27,7 @@ class GitoliteAdapter(GitServerAdapter):
         Raises :class:`RuntimeError` if the SSH command fails.
         """
         try:
-            result = subprocess.run(  # nosec B603
+            result = subprocess.run(  # nosec B603 B607
                 ["ssh", self.url, "info"],
                 capture_output=True,
                 text=True,

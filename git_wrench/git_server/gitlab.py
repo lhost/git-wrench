@@ -19,9 +19,16 @@ from urllib.error import URLError
 
 from .base import GitServerAdapter, RemoteRepo
 
+_ALLOWED_SCHEMES = ("http://", "https://", "git://", "git+ssh://")
+
 
 class GitLabAdapter(GitServerAdapter):
     """Lists repositories accessible via the GitLab API."""
+
+    def __init__(self, url: str) -> None:
+        super().__init__(url)
+        if not self.url.startswith(_ALLOWED_SCHEMES):
+            raise ValueError(f"GitLabAdapter requires an http/https/git/git+ssh URL, got: {self.url!r}")
 
     def list_repos(self) -> list[RemoteRepo]:
         """Return all projects (repositories) accessible with the configured token.
@@ -49,7 +56,7 @@ class GitLabAdapter(GitServerAdapter):
             if token:
                 req.add_header("PRIVATE-TOKEN", token)
             try:
-                with urllib.request.urlopen(req, timeout=15) as resp:
+                with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310
                     data: list[dict] = json.load(resp)
             except URLError as exc:
                 raise RuntimeError(f"GitLab API request failed: {exc}") from exc
