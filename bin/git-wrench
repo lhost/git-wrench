@@ -1,13 +1,17 @@
-#!/usr/bin/env python3
+#!/bin/sh
+# Resolve the repo root (one level above this script's directory)
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
 
-import sys
-from pathlib import Path
+# Prefer the project venv if present, fall back to whatever python3 is on PATH
+if [ -x "$REPO/.venv/bin/python3" ]; then
+    PYTHON="$REPO/.venv/bin/python3"
+else
+    PYTHON="python3"
+fi
 
-# Add project root directory (parent of bin/) to sys.path
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
+exec "$PYTHON" -c "
+import sys, os
+sys.path.insert(0, '$REPO')
 from main import main
-
-if __name__ == "__main__":
-    sys.exit(main())
+sys.exit(main())
+" "$@"
