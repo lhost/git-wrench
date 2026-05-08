@@ -85,18 +85,12 @@ def main(argv: list[str] | None = None) -> int:
 
         importlib.import_module(_module)
     except ModuleNotFoundError:
-        print(
-            f"git-wrench: unknown command '{cmd}'. Run 'git-wrench --help'.",
-            file=sys.stderr,
-        )
+        print(f"git-wrench: unknown command '{cmd}'. Run 'git-wrench --help'.", file=sys.stderr)
         return 1
 
     rc = registry.dispatch(cmd, rest)
     if rc is None:
-        print(
-            f"git-wrench: unknown command '{cmd}'. Run 'git-wrench --help'.",
-            file=sys.stderr,
-        )
+        print(f"git-wrench: unknown command '{cmd}'. Run 'git-wrench --help'.", file=sys.stderr)
         return 1
     return rc
 
