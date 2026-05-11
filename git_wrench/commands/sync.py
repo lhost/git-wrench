@@ -73,7 +73,10 @@ def run(args: list[str]) -> int:
         ws_path = ws.resolved_path
         print(BOLD(f"\nWorkspace: {ws.name}") + DIM(f"  ({ws_path})"))
 
-        # ── server-driven: clone missing repos, then pull all ─────────────────
+        # paths that were just cloned — skip them in the pull phase
+        just_cloned: set[Path] = set()
+
+        # ── server-driven: clone missing repos ────────────────────────────────
         if ws.servers:
             for server in ws.servers:
                 print(DIM(f"  Fetching repo list from {server.name} ({server.type})  {server.url} …"))
@@ -87,21 +90,18 @@ def run(args: list[str]) -> int:
 
                 print(DIM(f"    {len(remote_repos)} repos found on server."))
 
-                # repos already on disk (by directory name)
-                disk_names: set[str] = _disk_repo_names(ws_path)
-
                 cloned = cloned_err = 0
                 for rrepo in remote_repos:
-                    if rrepo.name in disk_names:
-                        continue  # already present — will be pulled below
                     dest = ws_path / rrepo.name
+                    if dest.exists():
+                        continue  # already on disk — will be pulled below
                     sys.stdout.write(f"  {CYAN(rrepo.name):.<55} ")
                     sys.stdout.flush()
                     try:
                         git_ops.clone_repo(rrepo.clone_url, dest)
                         print(GREEN("✓ cloned"))
                         cloned += 1
-                        disk_names.add(rrepo.name)  # avoid double-cloning
+                        just_cloned.add(dest.resolve())
                     except RuntimeError as exc:
                         print(RED(f"✗ clone failed: {exc}"))
                         cloned_err += 1
@@ -110,34 +110,21 @@ def run(args: list[str]) -> int:
                 if cloned or cloned_err:
                     print(DIM(f"    Cloned: {cloned} new, {cloned_err} failed."))
 
-        # ── pull all repos already on disk ────────────────────────────────────
+        # ── pull repos on disk, skipping those just cloned ────────────────────
         print(DIM(f"  Searching for repos (depth={depth}) …"))
         repos = git_ops.find_repos([ws_path], max_depth=depth)
         if not repos:
             print(YELLOW("  No git repositories found on disk."))
             continue
 
-        err_count = _pull_repos(repos, prune=prune, stash=do_stash, indent="  ")
+        to_pull = [r for r in repos if r.path.resolve() not in just_cloned]
+        err_count = _pull_repos(to_pull, prune=prune, stash=do_stash, indent="  ") if to_pull else 0
         global_err += err_count
 
     return 0 if global_err == 0 else 1
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
-
-
-def _disk_repo_names(ws_path: Path) -> set[str]:
-    """Return the set of directory names directly inside *ws_path* that are git repos."""
-    names: set[str] = set()
-    if not ws_path.is_dir():
-        return names
-    try:
-        for child in ws_path.iterdir():
-            if child.is_dir() and (child / ".git").exists():
-                names.add(child.name)
-    except PermissionError:
-        pass
-    return names
 
 
 def _pull_repos(
