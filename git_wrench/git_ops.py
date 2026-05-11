@@ -5,6 +5,7 @@ Git repository discovery and operations.
 from __future__ import annotations
 
 import subprocess  # nosec B404
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
@@ -18,6 +19,7 @@ class RepoStatus(Enum):
     CHANGED = auto()  # local uncommitted changes
     CONFLICT = auto()  # merge conflict
     ERROR = auto()
+    CLONED = auto()  # freshly cloned
 
 
 @dataclass
@@ -147,3 +149,35 @@ def sync_repo(repo: RepoInfo, *, fetch_prune: bool = True, stash: bool = False) 
 
     # refresh metadata
     refresh_status(repo)
+
+
+# ── clone operation ───────────────────────────────────────────────────────────
+
+
+def clone_repo(
+    clone_url: str,
+    dest: Path,
+    *,
+    on_progress: Callable[[str], None] | None = None,
+) -> RepoInfo:
+    """Clone *clone_url* into *dest* and return a :class:`RepoInfo`.
+
+    *dest* must not already exist.  Progress lines emitted by git are passed
+    to *on_progress* if provided.
+
+    Raises :class:`RuntimeError` on failure.
+    """
+    result = subprocess.run(  # nosec B603 B607
+        ["git", "clone", "--", clone_url, str(dest)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip())
+
+    repo = RepoInfo(path=dest, status=RepoStatus.CLONED, message="Cloned.")
+    if on_progress:
+        for line in (result.stdout + result.stderr).splitlines():
+            if line.strip():
+                on_progress(line)
+    return repo
