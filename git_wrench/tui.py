@@ -249,14 +249,16 @@ def _server_dialog(
     default_type: str = "github",
     default_name: str = "",
     default_url: str = "",
-) -> tuple[str, str, str] | None:
-    """Three-field dialog for type, name, url.
+    default_token: str = "",
+) -> tuple[str, str, str, str] | None:
+    """Four-field dialog for type, name, url, token.
 
-    Returns (type, name, url) or None if cancelled.
+    Returns (type, name, url, token) or None if cancelled.
+    *token* is the path to a GPG-encrypted .asc file; leave blank if unused.
     """
     h, w = stdscr.getmaxyx()
     dialog_w = max(62, len(title) + 4)
-    dialog_h = 15  # border+title+sep + 3×(label+field) + sep+hint + border
+    dialog_h = 18  # border+title+sep + 4×(label+field) + sep+hint + border
     dialog_y = max(0, (h - dialog_h) // 2)
     dialog_x = max(0, (w - dialog_w) // 2)
 
@@ -266,9 +268,9 @@ def _server_dialog(
     curses.curs_set(1)
 
     type_hint = f"({'/'.join(VALID_SERVER_TYPES)})"
-    fields = [list(default_type), list(default_name), list(default_url)]
-    labels = [f"Type  {type_hint}:", "Name:", "URL:"]
-    rows = [3, 6, 9]
+    fields = [list(default_type), list(default_name), list(default_url), list(default_token)]
+    labels = [f"Type  {type_hint}:", "Name:", "URL:", "Token file (GPG .asc, optional):"]
+    rows = [3, 6, 9, 12]
     active = 0
     field_w = dialog_w - 4
 
@@ -279,7 +281,7 @@ def _server_dialog(
             _addstr_clipped(win, 1, 2, title, _attr(_P_DIALOG, bold=True), dialog_w - 4)
             win.hline(2, 1, curses.ACS_HLINE, dialog_w - 2)
 
-            for i in range(3):
+            for i in range(4):
                 label_row = rows[i] - 1
                 field_row = rows[i]
                 _addstr_clipped(win, label_row, 2, labels[i], _attr(_P_DIALOG), dialog_w - 4)
@@ -307,6 +309,7 @@ def _server_dialog(
                 stype = "".join(fields[0]).strip()
                 sname = "".join(fields[1]).strip()
                 surl = "".join(fields[2]).strip()
+                stoken = "".join(fields[3]).strip()
                 if stype and sname and surl:
                     if stype not in VALID_SERVER_TYPES:
                         _dialog(
@@ -315,11 +318,11 @@ def _server_dialog(
                             [f"Type must be one of: {', '.join(VALID_SERVER_TYPES)}"],
                         )
                         continue
-                    return stype, sname, surl
+                    return stype, sname, surl, stoken
             elif key == 27:  # Esc
                 return None
             elif key in (ord("\t"), curses.KEY_BTAB):
-                active = (active + 1) % 3
+                active = (active + 1) % 4
             elif key in (curses.KEY_BACKSPACE, 127, 8):
                 if fields[active]:
                     fields[active].pop()
@@ -652,7 +655,7 @@ class WorkspacesPanel:
             _addstr_clipped(win, 2, 2, "No servers configured.", _attr(_P_DIM), w - 4)
             _addstr_clipped(win, 3, 2, "Press  n  to add one.", _attr(_P_DIM), w - 4)
         else:
-            col_hdr = f"  {'Name':<20} {'Type':<12} URL"
+            col_hdr = f"  {'Name':<20} {'Type':<12} {'URL':<40} Token"
             _addstr_clipped(win, 1, 0, col_hdr, _attr(_P_DIM), w)
 
             visible = h - 4
@@ -667,11 +670,12 @@ class WorkspacesPanel:
                 is_cur = active and real_idx == self._srv_cursor
                 base_attr = _attr(_P_CURSOR) if is_cur else curses.A_NORMAL
                 _fill_line(win, row, base_attr)
+                token_hint = srv.token if srv.token else ""
                 _addstr_clipped(
                     win,
                     row,
                     0,
-                    f"  {srv.name:<20} {srv.type:<12} {srv.url}",
+                    f"  {srv.name:<20} {srv.type:<12} {srv.url:<40} {token_hint}",
                     base_attr,
                     w - 1,
                 )
@@ -790,9 +794,9 @@ class WorkspacesPanel:
         result = _server_dialog(stdscr, f"Add server — {self._server_ws.name}")
         if result is None:
             return False
-        stype, sname, surl = result
+        stype, sname, surl, stoken = result
         try:
-            self.mgr.add_server(self._server_ws.name, stype, sname, surl)
+            self.mgr.add_server(self._server_ws.name, stype, sname, surl, token=stoken)
         except ValueError as e:
             _dialog(stdscr, "Error", [str(e)])
             return False
@@ -909,9 +913,13 @@ _HELP_LINES = [
     ("", _P_NORMAL),
     ("Workspace servers sub-view", _P_DIM),
     ("─" * 40, _P_DIM),
-    ("  n                   Add new server", _P_NORMAL),
+    ("  n                   Add new server (type/name/url/token)", _P_NORMAL),
     ("  d                   Delete selected server", _P_NORMAL),
     ("  Esc / Backspace     Return to workspace list", _P_NORMAL),
+    ("", _P_NORMAL),
+    ("  Token field: path to a GPG-encrypted .asc file", _P_DIM),
+    ("  Decrypted at sync time with:", _P_DIM),
+    ("    gpg --quiet --batch --decrypt < <path>", _P_DIM),
     ("", _P_NORMAL),
     ("Repos tab", _P_DIM),
     ("─" * 40, _P_DIM),

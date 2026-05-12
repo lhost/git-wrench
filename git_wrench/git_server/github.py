@@ -22,25 +22,26 @@ from .base import GitServerAdapter, RemoteRepo
 
 _DEFAULT_URL = "https://github.com"
 _API_URL = "https://api.github.com"
-_ALLOWED_SCHEMES = ("http://", "https://", "git://", "git+ssh://")
+_ALLOWED_SCHEMES = ("https://", "git://", "git+ssh://")
 
 
 class GitHubAdapter(GitServerAdapter):
     """Lists repositories for an authenticated user via the GitHub API."""
 
-    def __init__(self, url: str = _DEFAULT_URL) -> None:
+    def __init__(self, url: str = _DEFAULT_URL, *, token: str = "") -> None:
         super().__init__(url)
         if not self.url.startswith(_ALLOWED_SCHEMES):
             raise ValueError(f"GitHubAdapter requires an http/https/git/git+ssh URL, got: {self.url!r}")
+        self._token = token
 
     def list_repos(self) -> list[RemoteRepo]:
         """Return all repositories accessible with the configured token.
 
-        Paginates automatically.  Requires the  GITHUB_TOKEN  environment
-        variable to be set, otherwise falls back to an unauthenticated request
-        (subject to rate limiting and only public repos).
+        Paginates automatically.  Pass a plaintext token via the constructor or
+        set GITHUB_TOKEN in the environment; without either only public repos
+        are returned (subject to rate limiting).
         """
-        token = os.environ.get("GITHUB_TOKEN", "")
+        token = self._token or os.environ.get("GITHUB_TOKEN", "")
         # Determine API base: github.com → api.github.com; GHE keeps same host
         if self.url.rstrip("/") in (_DEFAULT_URL, _DEFAULT_URL.rstrip("/")):
             api_base = _API_URL

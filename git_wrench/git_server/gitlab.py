@@ -25,19 +25,20 @@ _ALLOWED_SCHEMES = ("https://", "git://", "git+ssh://")
 class GitLabAdapter(GitServerAdapter):
     """Lists repositories accessible via the GitLab API."""
 
-    def __init__(self, url: str) -> None:
+    def __init__(self, url: str, *, token: str = "") -> None:
         super().__init__(url)
         if not self.url.startswith(_ALLOWED_SCHEMES):
             raise ValueError(f"GitLabAdapter requires an http/https/git/git+ssh URL, got: {self.url!r}")
+        self._token = token
 
     def list_repos(self) -> list[RemoteRepo]:
         """Return all projects (repositories) accessible with the configured token.
 
-        Paginates automatically.  Set GITLAB_TOKEN to a personal access token
-        to include private/internal projects.  Without a token, only public
-        projects visible to anonymous users are returned.
+        Paginates automatically.  Pass a plaintext token via the constructor or
+        set GITLAB_TOKEN in the environment to include private/internal projects.
+        Without a token, only public projects visible to anonymous users are returned.
         """
-        token = os.environ.get("GITLAB_TOKEN", "")
+        token = self._token or os.environ.get("GITLAB_TOKEN", "")
         api_base = self.url.rstrip("/") + "/api/v4"
 
         repos: list[RemoteRepo] = []

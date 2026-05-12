@@ -81,7 +81,8 @@ def run(args: list[str]) -> int:
             for server in ws.servers:
                 print(DIM(f"  Fetching repo list from {server.name} ({server.type})  {server.url} …"))
                 try:
-                    adapter = gs.get_adapter(server.type, server.url)
+                    token = gs.resolve_token(server.token) if server.token else ""
+                    adapter = gs.get_adapter(server.type, server.url, token=token)
                     remote_repos = adapter.list_repos()
                 except Exception as exc:  # network/config errors must not abort everything
                     print(RED(f"  ✗ Could not reach server '{server.name}': {exc}"))

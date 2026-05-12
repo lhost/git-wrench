@@ -33,13 +33,19 @@ class GitServer:
     type: str  # "github" | "gitlab" | "gitolite"
     name: str  # short identifier, e.g. "origin"
     url: str  # e.g. "git.example.com" or "https://github.com"
+    token: str = ""  # path to a GPG-encrypted file whose plaintext is the API token
+    #   e.g. "~/.config/git-wrench/gitlab.hostname.sk-token.asc"
+    #   decrypted at runtime with: gpg --quiet --batch --decrypt < <path>
 
     def to_dict(self) -> dict[str, str]:
-        return {
+        d: dict[str, str] = {
             "server_type": self.type,
             "server_name": self.name,
             "server_url": self.url,
         }
+        if self.token:
+            d["token"] = self.token
+        return d
 
     @classmethod
     def from_dict(cls, d: dict[str, str]) -> GitServer:
@@ -47,6 +53,7 @@ class GitServer:
             type=d.get("server_type", ""),
             name=d.get("server_name", ""),
             url=d.get("server_url", ""),
+            token=d.get("token", ""),
         )
 
     def __str__(self) -> str:
@@ -133,6 +140,7 @@ class WorkspaceManager:
         server_type: str,
         server_name: str,
         server_url: str,
+        token: str = "",
     ) -> GitServer:
         """Add a git server to a workspace.  Raises ValueError on bad input."""
         if server_type not in VALID_SERVER_TYPES:
@@ -143,9 +151,20 @@ class WorkspaceManager:
         for s in ws.servers:
             if s.name == server_name:
                 raise ValueError(f"Server '{server_name}' already exists in workspace '{workspace_name}'.")
-        server = GitServer(type=server_type, name=server_name, url=server_url)
+        server = GitServer(type=server_type, name=server_name, url=server_url, token=token)
         ws.servers.append(server)
         return server
+
+    def set_server_token(self, workspace_name: str, server_name: str, token_path: str) -> GitServer:
+        """Set (or replace) the token path for *server_name* in *workspace_name*."""
+        ws = self.get(workspace_name)
+        if ws is None:
+            raise ValueError(f"Workspace '{workspace_name}' not found.")
+        for s in ws.servers:
+            if s.name == server_name:
+                s.token = token_path
+                return s
+        raise ValueError(f"Server '{server_name}' not found in workspace '{workspace_name}'.")
 
     def remove_server(self, workspace_name: str, server_name: str) -> GitServer:
         """Remove a git server from a workspace.  Raises ValueError if not found."""
