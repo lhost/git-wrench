@@ -18,6 +18,11 @@ from .base import GitServerAdapter, RemoteRepo
 class GitoliteAdapter(GitServerAdapter):
     """Lists repositories by running ``ssh <host> info`` against a Gitolite server."""
 
+    def __init__(self, url: str, *, token: str = "") -> None:
+        super().__init__(url)
+        # Gitolite uses SSH keys for auth; _token is not used but accepted for
+        # interface consistency with other adapters.
+
     def list_repos(self) -> list[RemoteRepo]:
         """Return all repositories reported by ``ssh <host> info``.
 
