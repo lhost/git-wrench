@@ -22,6 +22,18 @@ from .base import GitServerAdapter, RemoteRepo
 _ALLOWED_SCHEMES = ("https://", "git://", "git+ssh://")
 
 
+def _inject_token(http_url: str, token: str) -> str:
+    """Return *http_url* with ``oauth2:<token>@`` inserted before the host.
+
+    Example::
+        https://gitlab.example.com/group/repo.git
+        → https://oauth2:<token>@gitlab.example.com/group/repo.git
+    """
+    parsed = urllib.parse.urlparse(http_url)
+    authed = parsed._replace(netloc=f"oauth2:{token}@{parsed.hostname}" + (f":{parsed.port}" if parsed.port else ""))
+    return urllib.parse.urlunparse(authed)
+
+
 class GitLabAdapter(GitServerAdapter):
     """Lists repositories accessible via the GitLab API."""
 
@@ -71,10 +83,20 @@ class GitLabAdapter(GitServerAdapter):
             if not data:
                 break
             for item in data:
+                http_url = item.get("http_url_to_repo", "")
+                ssh_url = item.get("ssh_url_to_repo", "")
+                # Prefer HTTPS when a token is available so we can embed
+                # credentials directly in the URL:
+                #   https://oauth2:<token>@host/group/repo.git
+                # Fall back to SSH URL when there is no token.
+                if token and http_url:
+                    clone_url = _inject_token(http_url, token)
+                else:
+                    clone_url = http_url or ssh_url
                 repos.append(
                     RemoteRepo(
                         name=item.get("path", item.get("name", "")),
-                        clone_url=item.get("http_url_to_repo", item.get("ssh_url_to_repo", "")),
+                        clone_url=clone_url,
                         description=item.get("description") or "",
                     )
                 )
