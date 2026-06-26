@@ -23,8 +23,9 @@ class RemoteRepo:
 class GitServerAdapter(ABC):
     """Abstract base for all git server adapters."""
 
-    def __init__(self, url: str) -> None:
+    def __init__(self, url: str, *, token: str = "") -> None:
         self.url = url.rstrip("/")
+        self._token = token
 
     @abstractmethod
     def list_repos(self) -> list[RemoteRepo]:
