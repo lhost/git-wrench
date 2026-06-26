@@ -10,6 +10,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "black",
     "pre-commit",
     "pre-commit-hooks",
     "ruff",
