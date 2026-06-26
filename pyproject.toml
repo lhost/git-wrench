@@ -5,6 +5,8 @@ description = "terminal-based multi-repo git workspace manager"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "pytest-bdd",
+    "pytest-cov",
     "tomli-w",
 ]
 
@@ -49,9 +51,18 @@ select = [
     "UP",  # pyupgrade
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["B011"]  # assert False is fine in tests
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+addopts = "-ra"
 
 [tool.coverage.run]
 source = ["bin"]
@@ -68,6 +79,7 @@ exclude_dirs = [
     "dist",
     "tests",
 ]
+#skips = ["B101"] # More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
 
 [tool.bandit.assert_used]
 skips = ["*/tests/*"]
@@ -88,8 +100,5 @@ ignore-vulns = []
 
 [tool.hatch.build.targets.wheel]
 packages = ["git_wrench"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["."]
+include   = ["main.py"]
 
