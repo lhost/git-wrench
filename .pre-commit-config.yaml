@@ -11,3 +11,14 @@ repos:
     - id: ruff
       args: [--fix]
     - id: ruff-format
+
+  - repo: https://github.com/ibm/detect-secrets
+    rev: 0.13.1+ibm.64.dss
+    hooks:
+      - id: detect-secrets # pragma: whitelist secret
+        args: [--baseline, .secrets.baseline, --use-all-plugins]
+        exclude: '^uv(.lock)?$'
+        stages:
+          - pre-commit
+          - pre-push
+

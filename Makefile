@@ -72,13 +72,24 @@ test-pytest:
 test-coverage:
 	$(UV) pytest --cov
 
+test-secrets:
+	@echo "--- Running detect-secrets `$(UV) detect-secrets --version` ---"
+	@git ls-files -z -- \
+		| xargs -0 $(UV) detect-secrets-hook --baseline .secrets.baseline
+
+scan:
+	$(UV) detect-secrets scan --update .secrets.baseline
+
+audit:
+	$(UV) detect-secrets audit .secrets.baseline
+
 test-security:
 	$(UV) bandit -r . -c pyproject.toml
 
 test-audit:
 	$(UV) pip-audit
 
-test:: test-format test-lint test-typecheck test-pytest test-security test-audit
+test:: test-format test-lint test-typecheck test-pytest test-secrets test-security test-audit
 
 clean:
 	rm -rf .venv

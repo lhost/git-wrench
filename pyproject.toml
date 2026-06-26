@@ -10,6 +10,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "detect-secrets==0.13.1+ibm",
     "black",
     "pre-commit",
     "pre-commit-hooks",
@@ -97,6 +98,9 @@ typeCheckingMode = "standard"
 
 [tool.pip-audit]
 ignore-vulns = []
+
+[tool.uv.sources]
+detect-secrets = { url = "https://github.com/IBM/detect-secrets/archive/refs/tags/0.13.1+ibm.64.dss.tar.gz" }
 
 
 [tool.hatch.build.targets.wheel]
