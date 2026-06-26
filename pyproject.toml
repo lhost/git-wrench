@@ -5,8 +5,6 @@ description = "terminal-based multi-repo git workspace manager"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "pytest-bdd",
-    "pytest-cov",
     "tomli-w",
 ]
 
@@ -16,6 +14,8 @@ dev = [
     "pre-commit-hooks",
     "ruff",
     "pytest",
+    "pytest-bdd",
+    "pytest-cov",
     "pyright",
     "bandit",
     "pip-audit",
