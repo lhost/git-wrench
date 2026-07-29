@@ -93,6 +93,14 @@ def run(args: list[str]) -> int:
 
                 cloned = cloned_err = 0
                 for rrepo in remote_repos:
+                    repo_depth = len(Path(rrepo.name).parts) - 1
+                    if repo_depth > depth:
+                        print(
+                            RED(
+                                f"  ⚠ WARNING: '{rrepo.name}' is {repo_depth} level(s) deep"
+                                f" but recurse_depth={depth} — it will not be found on disk"
+                            )
+                        )
                     dest = ws_path / rrepo.name
                     if dest.exists():
                         continue  # already on disk — will be pulled below
