@@ -77,6 +77,9 @@ def run(args: list[str]) -> int:
         just_cloned: set[Path] = set()
 
         # ── server-driven: clone missing repos ────────────────────────────────
+        # remote_paths_by_server: normalised relative paths known to each server
+        remote_paths_by_server: dict[str, set[Path]] = {}
+
         if ws.servers:
             for server in ws.servers:
                 print(DIM(f"  Fetching repo list from {server.name} ({server.type})  {server.url} …"))
@@ -90,6 +93,8 @@ def run(args: list[str]) -> int:
                     continue
 
                 print(DIM(f"    {len(remote_repos)} repos found on server."))
+
+                remote_paths_by_server[server.name] = {Path(rrepo.name) for rrepo in remote_repos}
 
                 cloned = cloned_err = 0
                 for rrepo in remote_repos:
@@ -125,6 +130,17 @@ def run(args: list[str]) -> int:
         if not repos:
             print(YELLOW("  No git repositories found on disk."))
             continue
+
+        # ── warn about on-disk repos absent from every configured server ──────
+        if remote_paths_by_server:
+            all_remote_paths: set[Path] = set().union(*remote_paths_by_server.values())
+            for repo in repos:
+                try:
+                    rel = repo.path.resolve().relative_to(ws_path.resolve())
+                except ValueError:
+                    continue
+                if rel not in all_remote_paths:
+                    print(RED(f"  ⚠ WARNING: '{rel}' is on disk but not found on any configured server"))
 
         to_pull = [r for r in repos if r.path.resolve() not in just_cloned]
         err_count = _pull_repos(to_pull, prune=prune, stash=do_stash, indent="  ") if to_pull else 0
