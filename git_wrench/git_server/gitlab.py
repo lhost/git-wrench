@@ -95,7 +95,7 @@ class GitLabAdapter(GitServerAdapter):
                     clone_url = http_url or ssh_url
                 repos.append(
                     RemoteRepo(
-                        name=item.get("path", item.get("name", "")),
+                        name=item.get("path_with_namespace", item.get("path", item.get("name", ""))),
                         clone_url=clone_url,
                         description=item.get("description") or "",
                     )

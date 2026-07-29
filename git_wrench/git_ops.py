@@ -167,6 +167,7 @@ def clone_repo(
 
     Raises :class:`RuntimeError` on failure.
     """
+    dest.parent.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(  # nosec B603 B607
         ["git", "clone", "--", clone_url, str(dest)],
         capture_output=True,
