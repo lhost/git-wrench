@@ -1,4 +1,6 @@
 
+.DEFAULT_GOAL := help
+
 # termninal colors # {{{
 BLACK=30
 RED=31
@@ -23,27 +25,54 @@ BOLD_BLUE=\\033[${BOLD};${BLUE}m
 BOLD_CYAN=\\033[${BOLD};${CYAN}m
 # }}}
 
-.PHONY: uv.lock requirements.txt
-
 UV = uv run
 
-install:
+#		$$(uv tree --depth 1 --no-dev --preview-features json-output --format json \
+#		    | jq -r '.resolution | map(select(.kind == "package") | .name)[]')
+DEPENDENCIES =$(shell $(UV) tomlq -r ' \
+			  .project.dependencies[] | \
+			  sub(";.*$$"; "") | \
+			  sub("\\[.*\\]"; "") | \
+			  sub("(==|>=|<=|~=|!=|>|<).*"; "") \
+			  ' pyproject.toml \
+)
+
+DEPENDENCIES_DEV =$(shell $(UV) tomlq -r ' \
+				  .["dependency-groups"].dev[] | \
+				  sub(";.*$$"; "") | \
+				  sub("\\[.*\\]"; "") | \
+				  sub("(==|>=|<=|~=|!=|>|<).*"; "") \
+				  ' pyproject.toml \
+)
+
+.PHONY: uv.lock requirements.txt
+
+install: ## install required dependencies
 	uv sync --group dev
 	$(UV) pre-commit install
 
 sync:
 	uv sync
 
-update:: uv.lock
+up update:: uv.lock requirements.txt
 	$(UV) pre-commit autoupdate
 
 uv.lock:
 	uv sync --group dev
 
-dep: uv.lock requirements.txt
-
 requirements.txt:
 	uv export --format requirements.txt --output-file $@
+
+upgrade:
+	@echo DEPENDENCIES=$(DEPENDENCIES)
+	uv add --upgrade $(DEPENDENCIES)
+
+upgrade-dev:
+	@echo DEPENDENCIES_DEV=$(DEPENDENCIES_DEV)
+	uv add --group dev --upgrade $(DEPENDENCIES_DEV)
+
+
+dep: uv.lock requirements.txt
 
 hooks:
 	$(UV) pre-commit run --all-files
@@ -51,7 +80,11 @@ hooks:
 .git/hooks/pre-commit:
 	$(UV) pre-commit install
 
-format:
+.PHONY: help
+help: ## print this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+format: ## fix formatting
 	$(UV) ruff format .
 
 test-format:
@@ -60,7 +93,7 @@ test-format:
 test-lint:
 	$(UV) ruff check .
 
-fix:
+fix: ## fix python code
 	$(UV) ruff check . --fix
 
 test-typecheck:
@@ -77,7 +110,7 @@ test-secrets:
 	@git ls-files -z -- \
 		| xargs -0 $(UV) detect-secrets-hook --baseline .secrets.baseline
 
-scan:
+scan: ## run detect-secrets
 	$(UV) detect-secrets scan --update .secrets.baseline
 
 audit:
@@ -89,9 +122,9 @@ test-security:
 test-audit:
 	$(UV) pip-audit
 
-test:: test-format test-lint test-typecheck test-pytest test-secrets test-security test-audit
+test:: test-format test-lint test-typecheck test-pytest test-secrets test-security test-audit ## run tests
 
-clean:
+clean: ## cleanup Untitled documents and empty directories
 	rm -rf .venv
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type f -name "*.py[co]" -delete
