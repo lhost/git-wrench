@@ -141,7 +141,7 @@ def _pull_repos(
     ok_count = err_count = 0
 
     for repo in repos:
-        sys.stdout.write(f"{indent}  {CYAN(str(repo.path)):.<60} ")
+        sys.stdout.write(f"{indent}  {CYAN(str(repo.path) + ' '):.<60} ")
         sys.stdout.flush()
 
         git_ops.sync_repo(repo, fetch_prune=prune, stash=stash)
