@@ -52,7 +52,7 @@ Launches the full-screen interface.
 
 ## Commands
 
-### CLI – sync all repos
+### sync — pull all repos
 
 ```
 git-wrench sync
@@ -65,17 +65,34 @@ git-wrench sync --clean
 | `--path <dir>` | Scan a specific directory instead of configured workspaces |
 | `--clean` | Remove local repos not found on any configured server (prompts for confirmation) |
 
-### CLI – status overview
+For workspaces with git servers configured, `sync` also fetches the server's repo list, clones any missing repos, and warns about (or with `--clean`, removes) repos that exist locally but are no longer on the server.
+
+### status — repo overview table
 
 ```
 git-wrench status
 git-wrench status --path ~/my-workspace
 ```
 
+### workspace — manage workspaces
+
+```
+git-wrench workspace list
+git-wrench workspace add   <name> <path>
+git-wrench workspace rename <old-name> <new-name>
+git-wrench workspace remove <name>
+git-wrench workspace <name> list-servers
+git-wrench workspace <name> add-server --type <type> [--token <path>] <server-name> <url>
+git-wrench workspace <name> remove-server <server-name>
+git-wrench workspace <name> add-token <server-name>
+```
+
 ### Help
 
 ```
 git-wrench --help
+git-wrench --help <command>
+git-wrench <command> --help
 ```
 
 ---

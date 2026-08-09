@@ -13,7 +13,7 @@ from git_wrench.commands._ansi import BOLD, CYAN, DIM, RED, YELLOW
 from git_wrench.registry import command
 
 
-@command("status", help="Show branch / ahead-behind / dirty state for all repos")
+@command("status", help="Show branch / ahead-behind / dirty state for all repos", long_help=__doc__)
 def run(args: list[str]) -> int:
     # Heavy imports deferred until command execution.
     from git_wrench import config as cfg

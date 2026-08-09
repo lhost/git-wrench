@@ -23,7 +23,7 @@ from git_wrench.commands._ansi import BOLD, CYAN, DIM, GREEN, RED, YELLOW
 from git_wrench.registry import command
 
 
-@command("workspace", help="Manage workspaces (add, rename, remove, add-server…)")
+@command("workspace", help="Manage workspaces (add, rename, remove, add-server…)", long_help=__doc__)
 def run(args: list[str]) -> int:
     from git_wrench.workspace import WorkspaceManager
 

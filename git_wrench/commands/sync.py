@@ -26,7 +26,7 @@ from git_wrench.commands._ansi import BOLD, CYAN, DIM, GREEN, RED, YELLOW
 from git_wrench.registry import command
 
 
-@command("sync", help="Pull all repos in configured workspaces")
+@command("sync", help="Pull all repos in configured workspaces", long_help=__doc__)
 def run(args: list[str]) -> int:
     # Heavy imports stay inside the function — loaded only when this command runs.
     from git_wrench import config as cfg

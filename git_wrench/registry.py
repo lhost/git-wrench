@@ -31,13 +31,14 @@ class _Entry:
     module: str  # fully-qualified module path, e.g. "git_wrench.commands.sync"
     attr: str  # function name inside that module
     help: str  # one-line description shown in --help
+    long_help: str  # multi-line help shown by --help <command>
 
 
 # Global registry: command name → _Entry
 _REGISTRY: dict[str, _Entry] = {}
 
 
-def command(name: str, *, help: str = "") -> Callable:
+def command(name: str, *, help: str = "", long_help: str | None = None) -> Callable:
     """Decorator that registers a command function without importing the module eagerly.
 
     The decorated function is returned unchanged; only its location is recorded.
@@ -45,7 +46,7 @@ def command(name: str, *, help: str = "") -> Callable:
 
     def _decorator(fn: Callable) -> Callable:
         module = fn.__module__
-        _REGISTRY[name] = _Entry(module=module, attr=fn.__name__, help=help)
+        _REGISTRY[name] = _Entry(module=module, attr=fn.__name__, help=help, long_help=long_help or "")
         return fn
 
     return _decorator
@@ -60,9 +61,15 @@ def names() -> list[str]:
 
 
 def help_text(name: str) -> str:
-    """Return the help string for a command, or '' if unknown."""
+    """Return the one-line help string for a command, or '' if unknown."""
     entry = _REGISTRY.get(name)
     return entry.help if entry else ""
+
+
+def long_help_text(name: str) -> str:
+    """Return the long (multi-line) help string for a command, or '' if unknown."""
+    entry = _REGISTRY.get(name)
+    return entry.long_help if entry else ""
 
 
 def dispatch(name: str, args: list[str]) -> int | None:
