@@ -7,12 +7,18 @@ For workspaces that have git servers configured, the command also:
   3. Clones any repository that is missing from disk.
   4. Pulls (fast-forward) every repository that already exists on disk.
 
+Options:
+  --path <dir>   Override workspace paths; scan this directory instead.
+  --clean        Remove local repos that are no longer present on any configured
+                 server.  A confirmation prompt is shown before any deletion.
+
 Usage:
-  git-wrench sync [--path <dir>]
+  git-wrench sync [--path <dir>] [--clean]
 """
 
 from __future__ import annotations
 
+import shutil
 import sys
 from pathlib import Path
 
@@ -32,11 +38,15 @@ def run(args: list[str]) -> int:
     sync_cfg = conf.get("sync", {})
 
     override_path: Path | None = None
+    do_clean = False
     i = 0
     while i < len(args):
         if args[i] in ("--path", "-p") and i + 1 < len(args):
             override_path = Path(args[i + 1]).expanduser().resolve()
             i += 2
+        elif args[i] == "--clean":
+            do_clean = True
+            i += 1
         else:
             i += 1
 
@@ -131,16 +141,35 @@ def run(args: list[str]) -> int:
             print(YELLOW("  No git repositories found on disk."))
             continue
 
-        # ── warn about on-disk repos absent from every configured server ──────
+        # ── warn/clean about on-disk repos absent from every configured server ─
         if remote_paths_by_server:
             all_remote_paths: set[Path] = set().union(*remote_paths_by_server.values())
+            stale: list[Path] = []
             for repo in repos:
                 try:
                     rel = repo.path.resolve().relative_to(ws_path.resolve())
                 except ValueError:
                     continue
                 if rel not in all_remote_paths:
-                    print(RED(f"  ⚠ WARNING: '{rel}' is on disk but not found on any configured server"))
+                    if do_clean:
+                        stale.append(repo.path.resolve())
+                    else:
+                        print(RED(f"  ⚠ WARNING: '{rel}' is on disk but not found on any configured server"))
+
+            if stale:
+                print(RED(f"\n  The following {len(stale)} repo(s) are on disk but not found on any configured server:"))
+                for p in stale:
+                    print(RED(f"    {p}"))
+                answer = input("\n  Remove them? [y/N] ").strip().lower()
+                if answer == "y":
+                    for p in stale:
+                        shutil.rmtree(p)
+                        print(DIM(f"  Removed {p}"))
+                    # Refresh repo list after removal
+                    repos = [r for r in repos if r.path.resolve() not in set(stale)]
+                    just_cloned -= set(stale)
+                else:
+                    print(DIM("  Skipped removal."))
 
         to_pull = [r for r in repos if r.path.resolve() not in just_cloned]
         err_count = _pull_repos(to_pull, prune=prune, stash=do_stash, indent="  ") if to_pull else 0

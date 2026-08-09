@@ -57,7 +57,13 @@ Launches the full-screen interface.
 ```
 git-wrench sync
 git-wrench sync --path ~/my-workspace
+git-wrench sync --clean
 ```
+
+| Flag | Description |
+|---|---|
+| `--path <dir>` | Scan a specific directory instead of configured workspaces |
+| `--clean` | Remove local repos not found on any configured server (prompts for confirmation) |
 
 ### CLI – status overview
 
