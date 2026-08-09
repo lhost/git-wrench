@@ -151,6 +151,36 @@ def sync_repo(repo: RepoInfo, *, fetch_prune: bool = True, stash: bool = False) 
     refresh_status(repo)
 
 
+# ── branch operations ────────────────────────────────────────────────────────
+
+
+def gone_branches(repo_path: Path) -> list[str]:
+    """Return local branch names whose upstream tracking ref is marked as gone.
+
+    These are branches that once tracked a remote branch which has since been
+    deleted (e.g. after a merged pull request was cleaned up on the server).
+    ``git fetch --prune`` must have been run beforehand to update the remote
+    tracking state; this function only reads what git already knows locally.
+    """
+    rc, out, _ = _run(
+        ["git", "branch", "-vv"],
+        repo_path,
+    )
+    if rc != 0 or not out:
+        return []
+
+    branches: list[str] = []
+    for line in out.splitlines():
+        # Strip the leading "* " (current branch marker) or "  "
+        stripped = line.lstrip("* ").lstrip()
+        # Branch name is the first token; the rest contains tracking info.
+        # A gone upstream looks like: "branchname  <hash>  [origin/branchname: gone] ..."
+        if ": gone]" in line:
+            branch_name = stripped.split()[0]
+            branches.append(branch_name)
+    return branches
+
+
 # ── clone operation ───────────────────────────────────────────────────────────
 
 

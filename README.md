@@ -74,6 +74,23 @@ git-wrench status
 git-wrench status --path ~/my-workspace
 ```
 
+### branch — local branch management
+
+```
+git-wrench branch gone
+git-wrench branch gone --path ~/my-workspace
+git-wrench branch gone --force
+git-wrench branch gone --yes
+```
+
+Removes local branches whose remote tracking ref has been deleted (e.g. after a merged pull request is cleaned up on the server). Runs `git fetch --prune` first to refresh remote state, then lists all `[gone]` branches per repo and prompts for confirmation before deleting.
+
+| Flag | Description |
+|---|---|
+| `--path <dir>` | Scan a specific directory instead of configured workspaces |
+| `--force` | Delete with `-D` (removes even unmerged branches) |
+| `--yes` | Skip the confirmation prompt |
+
 ### workspace — manage workspaces
 
 ```
@@ -134,6 +151,7 @@ You can edit the file directly or use the **Config** tab in the TUI.
 │   ├── commands
 │   │   ├── _ansi.py
 │   │   ├── __init__.py
+│   │   ├── branch.py
 │   │   ├── status.py
 │   │   ├── sync.py
 │   │   └── workspace.py
