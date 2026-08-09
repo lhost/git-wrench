@@ -181,6 +181,56 @@ def gone_branches(repo_path: Path) -> list[str]:
     return branches
 
 
+def local_branches(repo_path: Path) -> list[str]:
+    """Return all local branch names, excluding HEAD."""
+    rc, out, _ = _run(["git", "branch", "--format=%(refname:short)"], repo_path)
+    if rc != 0 or not out:
+        return []
+    return [b for b in out.splitlines() if b and b != "HEAD"]
+
+
+def find_base_branch(repo_path: Path, candidates: list[str]) -> str | None:
+    """Return the first branch from *candidates* that exists locally in *repo_path*."""
+    existing = set(local_branches(repo_path))
+    for candidate in candidates:
+        if candidate in existing:
+            return candidate
+    return None
+
+
+def rebase_branch(repo_path: Path, branch: str, onto: str) -> tuple[bool, str]:
+    """Rebase *branch* onto *onto* inside *repo_path*.
+
+    Checks out *branch*, rebases it onto *onto*, then restores the original
+    HEAD.  Returns ``(success, message)``.  On failure the rebase is aborted
+    automatically so the repo is left in a clean state.
+    """
+    # remember current branch so we can restore it afterwards
+    rc, original, _ = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], repo_path)
+    original = original if rc == 0 else ""
+
+    # check out the target branch
+    rc, _, err = _run(["git", "checkout", branch], repo_path)
+    if rc != 0:
+        return False, f"checkout failed: {err}"
+
+    # rebase
+    rc, out, err = _run(["git", "rebase", onto], repo_path)
+    if rc != 0:
+        # abort so the repo is left clean
+        _run(["git", "rebase", "--abort"], repo_path)
+        # restore original branch
+        if original and original != branch:
+            _run(["git", "checkout", original], repo_path)
+        return False, err or out
+
+    # restore original branch
+    if original and original != branch:
+        _run(["git", "checkout", original], repo_path)
+
+    return True, out or f"Rebased onto {onto}."
+
+
 # ── clone operation ───────────────────────────────────────────────────────────
 
 

@@ -76,8 +76,13 @@ git-wrench status --path ~/my-workspace
 
 ### branch — local branch management
 
+Both subcommands operate on the **current directory's repo** by default. Use `--workspace` to act across all configured workspaces, or `--path` to target a specific directory.
+
+#### branch gone
+
 ```
 git-wrench branch gone
+git-wrench branch gone --workspace
 git-wrench branch gone --path ~/my-workspace
 git-wrench branch gone --force
 git-wrench branch gone --yes
@@ -87,9 +92,29 @@ Removes local branches whose remote tracking ref has been deleted (e.g. after a 
 
 | Flag | Description |
 |---|---|
-| `--path <dir>` | Scan a specific directory instead of configured workspaces |
+| `--workspace` | Act on all configured workspaces instead of the current repo |
+| `--path <dir>` | Act on a specific directory (scanned up to `recurse_depth`) |
 | `--force` | Delete with `-D` (removes even unmerged branches) |
 | `--yes` | Skip the confirmation prompt |
+
+#### branch rebase
+
+```
+git-wrench branch rebase
+git-wrench branch rebase --workspace
+git-wrench branch rebase --path ~/my-workspace
+git-wrench branch rebase --branch my-feature
+git-wrench branch rebase --dry-run
+```
+
+Rebases all local feature branches onto the first base branch found in the repo from `rebase.branches_order` (default: `develop`, `main`, `master`). Base branches themselves are skipped. On conflict the rebase is automatically aborted and the branch is left unchanged.
+
+| Flag | Description |
+|---|---|
+| `--workspace` | Act on all configured workspaces instead of the current repo |
+| `--path <dir>` | Act on a specific directory (scanned up to `recurse_depth`) |
+| `--branch <b>` | Rebase only this specific branch |
+| `--dry-run` | Show what would be rebased without making any changes |
 
 ### workspace — manage workspaces
 
@@ -136,6 +161,9 @@ paths = [
 recurse_depth = 2        # how deep to search for .git directories
 fetch_prune = true       # pass --prune to git fetch
 stash_before_pull = false
+
+[rebase]
+branches_order = ["develop", "main", "master"]   # first branch found locally is used as the rebase base
 ```
 
 You can edit the file directly or use the **Config** tab in the TUI.

@@ -16,6 +16,9 @@ Example config.toml (~/.config/git-wrench/config.toml):
   recurse_depth = 2
   fetch_prune = true
   stash_before_pull = false
+
+  [rebase]
+  branches_order = ["develop", "main", "master"]
 """
 
 from __future__ import annotations
@@ -39,6 +42,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "recurse_depth": 2,
         "fetch_prune": True,
         "stash_before_pull": False,
+    },
+    "rebase": {
+        "branches_order": ["develop", "main", "master"],
     },
 }
 
