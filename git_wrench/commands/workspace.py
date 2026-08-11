@@ -155,7 +155,7 @@ def _list_servers(mgr, workspace_name: str) -> int:
 def _add_server(mgr, workspace_name: str, args: list[str]) -> int:
     """Parse:  [--type <type>] [--token <path>] <server-name> <url>"""
     server_type = "github"
-    token_path = ""
+    token_path = ""  # nosec B105
     rest = list(args)
 
     # consume --type and --token flags
