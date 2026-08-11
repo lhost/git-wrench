@@ -140,7 +140,7 @@ class WorkspaceManager:
         server_type: str,
         server_name: str,
         server_url: str,
-        token: str = "",
+        token: str = "",  # nosec B107
     ) -> GitServer:
         """Add a git server to a workspace.  Raises ValueError on bad input."""
         if server_type not in VALID_SERVER_TYPES:

@@ -56,7 +56,7 @@ def resolve_token(token_path: str) -> str:
     return result.stdout.decode().strip()
 
 
-def get_adapter(server_type: str, url: str, token: str = "") -> GitServerAdapter:
+def get_adapter(server_type: str, url: str, token: str = "") -> GitServerAdapter:  # nosec B107
     """Return a :class:`GitServerAdapter` instance for *server_type*.
 
     *token* is the already-resolved plaintext API token.  When omitted the

@@ -249,7 +249,7 @@ def _server_dialog(
     default_type: str = "github",
     default_name: str = "",
     default_url: str = "",
-    default_token: str = "",
+    default_token: str = "",  # nosec B107
 ) -> tuple[str, str, str, str] | None:
     """Four-field dialog for type, name, url, token.
 
