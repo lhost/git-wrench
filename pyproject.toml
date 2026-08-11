@@ -65,6 +65,11 @@ testpaths = ["tests"]
 pythonpath = ["."]
 python_files = ["test_*.py"]
 addopts = "-ra"
+filterwarnings = [
+    # pytest-bdd 8.1.0 uses deprecated pytest 9 APIs; ignore until upstream fixes it
+    "ignore::pytest.PytestRemovedIn10Warning:pytest_bdd",
+    "ignore::pytest.PytestRemovedIn10Warning:_pytest.fixtures",
+]
 
 [tool.coverage.run]
 source = ["bin"]
