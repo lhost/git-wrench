@@ -12,7 +12,7 @@ server type.  Use :func:`get_adapter` to obtain the right one.
 
 from __future__ import annotations
 
-import subprocess
+import subprocess  # nosec B404
 from pathlib import Path
 
 from .base import GitServerAdapter

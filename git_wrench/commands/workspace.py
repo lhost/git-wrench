@@ -15,7 +15,7 @@ Usage:
 from __future__ import annotations
 
 import getpass
-import subprocess
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 
