@@ -246,6 +246,18 @@ def _list(args: list[str]) -> int:
             print(DIM("  (no local branches)"))
             continue
 
+        # Pre-collect changed files per branch so we can detect cross-branch conflicts.
+        non_base = [b for b in branches if base is None or b != base]
+        branch_files: dict[str, list[str]] = {}
+        if base is not None:
+            for b in non_base:
+                branch_files[b] = git_ops.branch_changed_files(repo.path, b, base)
+
+        # Count how many branches each file appears in.
+        from collections import Counter
+
+        file_branch_count: Counter[str] = Counter(f for files in branch_files.values() for f in files)
+
         for idx, branch in enumerate(branches, start=1):
             is_base = base and branch == base
             branch_label = DIM(CYAN(branch)) if is_base else CYAN(branch)
@@ -259,10 +271,11 @@ def _list(args: list[str]) -> int:
                 print(DIM("      (no base branch found — cannot diff)"))
                 continue
 
-            files = git_ops.branch_changed_files(repo.path, branch, base)
+            files = branch_files.get(branch, [])
             if files:
                 for f in files:
-                    print(f"      {DIM('·')} {f}")
+                    label = YELLOW(f) if file_branch_count[f] > 1 else f
+                    print(f"      {DIM('·')} {label}")
             else:
                 print(DIM("      (no changed files)"))
 
