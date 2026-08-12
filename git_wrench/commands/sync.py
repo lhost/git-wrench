@@ -119,7 +119,7 @@ def run(args: list[str]) -> int:
                     dest = ws_path / rrepo.name
                     if dest.exists():
                         continue  # already on disk — will be pulled below
-                    sys.stdout.write(f"  {CYAN(rrepo.name):.<55} ")
+                    sys.stdout.write(f"  {CYAN(rrepo.name + ' '):.<55} ")
                     sys.stdout.flush()
                     try:
                         git_ops.clone_repo(rrepo.clone_url, dest)

@@ -145,7 +145,7 @@ def _gone(args: list[str]) -> int:
 
     for repo in repos:
         # Fetch + prune so remote tracking state is up to date.
-        sys.stdout.write(f"  {CYAN(str(repo.path)):.<60} fetching… ")
+        sys.stdout.write(f"  {CYAN(str(repo.path) + ' '):.<60} fetching… ")
         sys.stdout.flush()
         rc, _, err = git_ops._run(["git", "fetch", "--prune"], repo.path)
         if rc != 0:
@@ -260,7 +260,7 @@ def _rebase(args: list[str]) -> int:
 
         ok = skipped = failed = 0
         for branch in candidates:
-            label = f"    {CYAN(branch):.<55} "
+            label = f"    {CYAN(branch + ' '):.<55} "
             sys.stdout.write(label)
             sys.stdout.flush()
 
