@@ -47,7 +47,21 @@ DEPENDENCIES_DEV =$(shell $(UV) tomlq -r ' \
 
 .PHONY: uv.lock requirements.txt
 
-install: ## install required dependencies
+install: ## install git-wrench via Homebrew from local formula
+	$(eval VERSION := $(shell uv run tomlq -r '.project.version' pyproject.toml))
+	$(eval TARBALL := /tmp/git-wrench-$(VERSION).tar.gz)
+	rm -f $(TARBALL)
+	brew cleanup --prune=all git-wrench 2>/dev/null || true
+	git archive --format=tar.gz --prefix=git-wrench-$(VERSION)/ HEAD > $(TARBALL)
+	brew tap lhost/git-wrench $(PWD) || true
+	brew trust lhost/git-wrench
+	sed "s|url \"https://github.com/lhost/git-wrench/archive/refs/tags/v[^\"]*\"|url \"file://$(TARBALL)\"\n  version \"$(VERSION)\"|; /sha256/d" \
+	    $(PWD)/Formula/git-wrench.rb \
+	    > $$(brew --repository lhost/git-wrench)/Formula/git-wrench.rb
+	brew uninstall --force git-wrench 2>/dev/null || true
+	brew install --build-from-source git-wrench
+
+install-dev: ## install required dependencies for local development (developers only)
 	uv sync --group dev
 	$(UV) pre-commit install
 
@@ -123,6 +137,10 @@ test-audit:
 	$(UV) pip-audit
 
 test:: test-format test-lint test-typecheck test-pytest test-secrets test-security test-audit ## run tests
+
+clean-homebrew: ## remove Homebrew tap
+	#brew uninstall --force git-wrench 2>/dev/null || true
+	brew untap lhost/git-wrench 2>/dev/null || true
 
 clean: ## cleanup Untitled documents and empty directories
 	rm -rf .venv
