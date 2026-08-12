@@ -9,6 +9,9 @@ Subcommands:
           Runs 'git fetch --prune' first to refresh remote tracking state,
           then lists branches marked as '[gone]' and prompts before deletion.
 
+  list    List all local branches in alphabetical order (numbered) together
+          with the files changed on each branch relative to the base branch
+
   rebase  Rebase local branches onto the first base branch found in
           rebase.branches_order (config default: develop, main, master).
           Base branches themselves and already-up-to-date branches are skipped.
@@ -20,6 +23,9 @@ Options (both subcommands):
 Options (gone):
   --force        Delete branches with 'git branch -D' (unmerged branches too)
   --yes          Skip confirmation prompt and delete immediately
+
+Options (list):
+  (none beyond the shared --path / --workspace)
 
 Options (rebase):
   --branch <b>   Rebase only this specific local branch (default: all non-base branches)
@@ -35,6 +41,10 @@ Usage:
   git-wrench branch gone --path ~/my-workspace
   git-wrench branch gone --force
   git-wrench branch gone --yes
+
+  git-wrench branch list
+  git-wrench branch list --workspace
+  git-wrench branch list --path ~/my-workspace
 
   git-wrench branch rebase
   git-wrench branch rebase --workspace
@@ -62,6 +72,8 @@ def run(args: list[str]) -> int:
 
     if subcmd == "gone":
         return _gone(rest)
+    if subcmd == "list":
+        return _list(rest)
     if subcmd == "rebase":
         return _rebase(rest)
 
@@ -183,6 +195,78 @@ def _gone(args: list[str]) -> int:
         print(DIM(f"    {deleted} deleted, {failed} failed."))
 
     return 0 if global_err == 0 else 1
+
+
+# ── list ──────────────────────────────────────────────────────────────────────
+
+
+def _list(args: list[str]) -> int:
+    """List all local branches (alphabetically, numbered) with changed files."""
+    from git_wrench import config as cfg
+    from git_wrench import git_ops
+
+    override_path: Path | None = None
+    use_workspace = False
+    i = 0
+    while i < len(args):
+        if args[i] in ("--path", "-p") and i + 1 < len(args):
+            override_path = Path(args[i + 1]).expanduser().resolve()
+            i += 2
+        elif args[i] == "--workspace":
+            use_workspace = True
+            i += 1
+        else:
+            i += 1
+
+    conf = cfg.load()
+    sync_cfg = conf.get("sync", {})
+    rebase_cfg = conf.get("rebase", {})
+    depth = int(sync_cfg.get("recurse_depth", 2))
+    branches_order: list[str] = rebase_cfg.get("branches_order", ["develop", "main", "master"])
+
+    roots, effective_depth = _resolve_roots(override_path, use_workspace, conf, depth)
+    if not roots:
+        print(RED("No workspace paths configured. Run 'git-wrench' interactively to add one."))
+        return 1
+
+    print(BOLD("git-wrench branch list"))
+
+    repos = git_ops.find_repos(roots, max_depth=effective_depth)
+    if not repos:
+        print(YELLOW("No git repositories found."))
+        return 0
+
+    for repo in repos:
+        base = git_ops.find_base_branch(repo.path, branches_order)
+        branches = sorted(git_ops.local_branches(repo.path))
+
+        print(f"\n{BOLD(str(repo.path))}" + (DIM(f"  (base: {base})") if base else ""))
+
+        if not branches:
+            print(DIM("  (no local branches)"))
+            continue
+
+        for idx, branch in enumerate(branches, start=1):
+            is_base = base and branch == base
+            branch_label = DIM(CYAN(branch)) if is_base else CYAN(branch)
+            print(f"  {DIM(str(idx) + '.')} {branch_label}")
+
+            if is_base:
+                print(DIM("      (base branch — skipped)"))
+                continue
+
+            if base is None:
+                print(DIM("      (no base branch found — cannot diff)"))
+                continue
+
+            files = git_ops.branch_changed_files(repo.path, branch, base)
+            if files:
+                for f in files:
+                    print(f"      {DIM('·')} {f}")
+            else:
+                print(DIM("      (no changed files)"))
+
+    return 0
 
 
 # ── rebase ────────────────────────────────────────────────────────────────────

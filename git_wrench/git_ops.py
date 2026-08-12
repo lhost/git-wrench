@@ -189,6 +189,21 @@ def local_branches(repo_path: Path) -> list[str]:
     return [b for b in out.splitlines() if b and b != "HEAD"]
 
 
+def branch_changed_files(repo_path: Path, branch: str, base: str) -> list[str]:
+    """Return file paths changed in *branch* relative to *base*.
+
+    Uses the three-dot diff (``base...branch``) so only commits unique to
+    *branch* are considered, regardless of what has landed on *base* since.
+    """
+    rc, out, _ = _run(
+        ["git", "diff", "--name-only", f"{base}...{branch}"],
+        repo_path,
+    )
+    if rc != 0 or not out:
+        return []
+    return [f for f in out.splitlines() if f]
+
+
 def find_base_branch(repo_path: Path, candidates: list[str]) -> str | None:
     """Return the first branch from *candidates* that exists locally in *repo_path*."""
     existing = set(local_branches(repo_path))
