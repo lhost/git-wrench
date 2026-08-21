@@ -21,6 +21,7 @@ dev = [
     "pyright",
     "bandit",
     "pip-audit",
+    "tomlq",
 ]
 
 [build-system]
@@ -111,4 +112,3 @@ detect-secrets = { url = "https://github.com/IBM/detect-secrets/archive/refs/tag
 [tool.hatch.build.targets.wheel]
 packages = ["git_wrench"]
 include   = ["main.py"]
-
