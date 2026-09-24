@@ -1,16 +1,125 @@
-# You can override the included template(s) by including variable overrides
-# SAST customization: https://docs.gitlab.com/user/application_security/sast/#available-cicd-variables
-# Secret Detection customization: https://docs.gitlab.com/user/application_security/secret_detection/pipeline/configure/
-# Dependency Scanning customization: https://docs.gitlab.com/user/application_security/dependency_scanning/dependency_scanning_sbom/#customizing-analyzer-behavior
-# Container Scanning customization: https://docs.gitlab.com/user/application_security/container_scanning/#customizing-analyzer-behavior
-# Note that environment variables can be set in several places
-# See https://docs.gitlab.com/ci/variables/#cicd-variable-precedence
+image: $CUSTOM_IMAGE
+
 stages:
-- test
-- secret-detection
+  - .pre
+  - build-ci-image
+  - test
+  - build
+
 variables:
-  SECRET_DETECTION_ENABLED: 'true'
-secret_detection:
-  stage: secret-detection
-include:
-- template: Security/Secret-Detection.gitlab-ci.yml
+  GITLAB_REPO_URL: "https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+  UV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/uv"
+  # Tell Pip to store cache files inside the project
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  TZ: "Europe/Bratislava"
+  LANG: "en_US.UTF-8"
+  GIT_DEPTH: 0  # 0 indicates a full clone (infinite fetch-depth)
+
+# Global Cache Definition
+cache:
+  key:
+    files:
+      - uv.lock
+  paths:
+    - .cache/pip
+    - .cache/uv
+    - .venv/
+    - apt-cache/
+
+generate-env:
+  stage: .pre  # Runs before everything else
+  script:
+    # date +%y  -> 26 (short year)
+    # %-m / %-d -> removes leading zeros (e.g., 4 instead of 04)
+    - export DATE_PART=$(date +%y.%-m.%-d)
+    - export HASH_PART=$(cat Dockerfile wakemeops-keyring.asc pyproject.toml uv.lock .gitlab-ci.yml | sha256sum | cut -c1-7)
+    - export TAG="${DATE_PART}-${HASH_PART}"
+    - echo "CUSTOM_IMAGE=$CI_REGISTRY_IMAGE:$TAG" >> build.env
+    # Add a fallback static pointer tag for tracking cache
+    - echo "LATEST_IMAGE=$CI_REGISTRY_IMAGE:latest" >> build.env
+    - cat build.env
+    - env | grep -e '^(CI\|GITLAB\|LANG\|TZ)' | sort
+  artifacts:
+    reports:
+      dotenv: build.env
+
+build-ci-image:
+  stage: build-ci-image
+  needs:
+    - job: generate-env
+      artifacts: true
+  image: quay.io/buildah/stable:latest
+  variables:
+    # Buildah needs a storage driver to work inside a container
+    STORAGE_DRIVER: vfs
+  script:
+    - buildah login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    # 1. Try to pull the exact calculated date/hash image to see if it already exists
+    - |
+      if buildah pull $CUSTOM_IMAGE >/dev/null 2>&1; then
+        echo "Image $CUSTOM_IMAGE already exists in registry. Skipping build."
+      else
+        echo "Image not found. Checking if we can pull the latest base to build or tag..."
+        # Pull the latest existing image to use as a quick layer cache
+        buildah pull $LATEST_IMAGE >/dev/null 2>&1 || true
+
+        # Build the new tag and update the latest reference simultaneously
+        buildah bud --cache-from $CI_REGISTRY_IMAGE --format oci -t $CUSTOM_IMAGE -t $LATEST_IMAGE .
+        buildah push $CUSTOM_IMAGE
+        buildah push $LATEST_IMAGE
+      fi
+  rules:
+    # Also allow manual trigger if something goes wrong
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "master"
+
+# --- TEST STAGE ---
+# Runs on every commit to every branch
+run-tests:
+  stage: test
+  script:
+    - make test
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+# --- BUILD STAGE ---
+build-packages-deb:
+  stage: build
+  image: debian:trixie-slim
+  variables:
+    GIT_DEPTH: 0
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends
+      debhelper dh-python python3-all python3-hatchling python3-installer
+      python3-build pybuild-plugin-pyproject
+  script:
+    - make deb
+  artifacts:
+    paths:
+      - dist/deb/*.deb
+      - dist/deb/*.changes
+    expire_in: never
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+build-packages-rpm:
+  stage: build
+  image: quay.io/centos/centos:stream9
+  variables:
+    # Do not inherit the global uv/pip cache keys — not relevant for an rpm build
+    GIT_DEPTH: 0
+  before_script:
+    - dnf install -y rpm-build python3-devel python3-pip python3-wheel
+      python3-build python3-installer python3-hatchling make curl
+  script:
+    - make rpm
+  artifacts:
+    paths:
+      - dist/rpmbuild/RPMS/
+      - dist/rpmbuild/SRPMS/
+    expire_in: never
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "develop"

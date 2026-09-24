@@ -1,0 +1,5 @@
+git-wrench (0.1.0-1) unstable; urgency=medium
+
+  * Initial Debian release.
+
+ -- Lubomir Host <lubomir.host@gmail.com>  Sun, 19 Apr 2026 00:00:00 +0000

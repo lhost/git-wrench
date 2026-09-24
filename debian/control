@@ -1,0 +1,23 @@
+Source: git-wrench
+Section: python
+Priority: optional
+Maintainer: Lubomir Host <lubomir.host@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               python3-all,
+               python3-hatchling,
+               python3-installer,
+               python3-build
+Standards-Version: 4.6.2
+Homepage: https://github.com/lhost/git-wrench
+Rules-Requires-Root: no
+
+Package: git-wrench
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends},
+         git,
+         python3-tomli-w
+Description: Terminal-based multi-repo git workspace manager
+ git-wrench is a terminal-based multi-repo git workspace manager with an
+ interactive TUI and CLI commands to inspect status and synchronize
+ repositories across workspaces.

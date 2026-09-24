@@ -138,6 +138,19 @@ test-audit:
 
 test:: test-format test-lint test-typecheck test-pytest test-secrets test-security test-audit ## run tests
 
+deb: ## build Debian package using dpkg-buildpackage
+	@mkdir -p dist/deb
+	dpkg-buildpackage -us -uc -b --output-dir "$$(pwd)/dist/deb"
+
+rpm: ## build RPM package using rpmbuild
+	@VERSION=$$(uv run tomlq -r '.project.version' pyproject.toml); \
+	TOPDIR="$$(pwd)/dist/rpmbuild"; \
+	mkdir -p "$${TOPDIR}"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}; \
+	cp git-wrench.spec "$${TOPDIR}/SPECS/git-wrench.spec"; \
+	curl -fsSL "https://github.com/lhost/git-wrench/archive/refs/tags/v$${VERSION}.tar.gz" \
+	    -o "$${TOPDIR}/SOURCES/git-wrench-$${VERSION}.tar.gz"; \
+	rpmbuild --define "_topdir $${TOPDIR}" -ba "$${TOPDIR}/SPECS/git-wrench.spec"
+
 clean-homebrew: ## remove Homebrew tap
 	#brew uninstall --force git-wrench 2>/dev/null || true
 	brew untap lhost/git-wrench 2>/dev/null || true
