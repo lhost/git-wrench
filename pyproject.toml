@@ -107,6 +107,8 @@ skip_covered = true
 [tool.bandit]
 exclude_dirs = [
     ".venv",
+    ".cache",
+    "__pycache__",
     "build",
     "dist",
     "tests",
@@ -120,6 +122,7 @@ skips = ["*/tests/*"]
 include = ["git_wrench", "bin"]
 exclude = [
     ".venv",
+    ".cache",
     "__pycache__",
     "build",
     "dist",
