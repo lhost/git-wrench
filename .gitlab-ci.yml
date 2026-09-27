@@ -5,6 +5,8 @@ stages:
   - build-ci-image
   - test
   - build
+  - mirror
+  - deploy
 
 variables:
   GITLAB_REPO_URL: "https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
@@ -74,6 +76,17 @@ build-ci-image:
     - if: $CI_COMMIT_BRANCH == "develop"
     - if: $CI_COMMIT_BRANCH == "master"
 
+# --- HELPERS ---
+.ssh_setup: &ssh_setup
+  before_script:
+    - eval $(ssh-agent -s)
+    - export GIT_SSH_COMMAND="ssh -o BatchMode=yes -o IdentitiesOnly=no"
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - echo "$SSH_CONFIG" > ~/.ssh/config
+    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod -R og-rwx ~/.ssh
+
 # --- TEST STAGE ---
 # Runs on every commit to every branch
 run-tests:
@@ -84,6 +97,29 @@ run-tests:
     - if: $CI_COMMIT_BRANCH
 
 # --- BUILD STAGE ---
+# Compiles Markdown to HTML and pushes to a specific branch on GitLab
+build-pages:
+  stage: build
+  script:
+    - make generate-badge
+    - git config --global user.name "CI Builder"
+    - git config --global user.email "ci@yourdomain.com"
+    - git remote set-url origin $GITLAB_REPO_URL
+    # Determine which branch to push to based on current branch
+    - |
+      if [ "$CI_COMMIT_BRANCH" == "master" ]; then
+        uv run mkdocs gh-deploy --remote-branch gh-pages --force
+      elif [ "$CI_COMMIT_BRANCH" == "develop" ]; then
+        uv run mkdocs gh-deploy --remote-branch gh-pages-stage --force
+      fi
+  artifacts:
+    paths:
+      - posts-count.svg
+    expire_in: never  # Keep the latest version forever for the badge link
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
 build-packages-deb:
   stage: build
   image: debian:trixie-slim
@@ -123,3 +159,46 @@ build-packages-rpm:
   rules:
     - if: $CI_COMMIT_BRANCH == "master"
     - if: $CI_COMMIT_BRANCH == "develop"
+
+# --- MIRROR STAGE ---
+# Force pushes the build-only branches to your external mirror
+mirror-to-external:
+  stage: mirror
+  <<: *ssh_setup
+  script:
+    - git remote add mirror $MIRROR_URL
+    - |
+      if [ "$CI_COMMIT_BRANCH" == "master" ]; then
+        echo "Mirroring production documentation"
+        git fetch origin gh-pages:gh-pages && git push mirror gh-pages --force
+      elif [ "$CI_COMMIT_BRANCH" == "develop" ]; then
+        echo "Mirroring staging documentation"
+        git fetch origin gh-pages-stage:gh-pages-stage && git push mirror gh-pages-stage --force
+      fi
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+# --- DEPLOY STAGE ---
+# SSH into the server and tell it to pull from the Mirror
+deploy:
+  stage: deploy
+  <<: *ssh_setup
+  script:
+    # We fetch from the mirror on the server itself to keep it updated
+    - ssh $SERVER_USER@$TARGET_IP "cd $WEB_ROOT && git fetch origin && git reset --hard origin/$TARGET_BRANCH"
+  parallel:
+    matrix:
+      - TARGET_IP: [$STAGE_SERVER_NAME]
+        SERVER_USER: $STAGE_SERVER_USER
+        TARGET_BRANCH: "gh-pages-stage"
+        WEB_ROOT: $STAGE_WEB_ROOT
+        CONF_BRANCH: "develop"
+
+      - TARGET_IP: [$PROD_SERVER_NAME]
+        SERVER_USER: $PROD_SERVER_USER
+        TARGET_BRANCH: "gh-pages"
+        WEB_ROOT: $PROD_WEB_ROOT
+        CONF_BRANCH: "master"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CONF_BRANCH
