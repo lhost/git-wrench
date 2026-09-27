@@ -1,0 +1,131 @@
+site_name: git-wrench documentation
+site_url: https://git-wrench.dev/
+site_author: Ľubomír Host
+copyright: >
+  Copyright &copy; 2026 Ľubomír Host -
+  <a href="#__consent">Change cookie settings</a>
+
+nav:
+  - Home: 'index.md'
+
+theme:
+  name: material
+  custom_dir: overrides
+  language: en
+  font:
+    text: Open Sans
+    code: Roboto Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: blue
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+  features:
+    - content.tabs.link
+  # - navigation.instant        # Disabled: breaks Reveal.js slide loading
+    - navigation.indexes  # Allows clicking on section headers
+    - navigation.tabs     # Top-level navigation tabs
+    - navigation.tabs.sticky
+    - content.code.copy
+
+plugins:
+  - awesome-pages:
+      collapse_single_pages: true
+  - tags
+  - meta
+  - privacy
+  - search
+  - callouts
+  - mermaid2
+  - include-markdown:
+      start: <!-- BEGIN INCLUDE -->
+      end: <!-- END INCLUDE -->
+      cache: 600
+      trailing_newlines: false
+      encoding: utf-8
+      rewrite_relative_urls: true
+      comments: true
+  - mkdocs-video:
+      is_video: True
+      video_muted: True
+      video_controls: True
+  - revealjs: {}
+  - minify:
+      minify_html: true
+      minify_css: true
+      minify_js: true
+      cache_safe: true  # Highly recommended! Generates file.min.js and busts browser cache
+      js_files:
+        - javascripts/links_in_new_tabs.js
+        # - javascripts/youtube-loop.js
+      css_files:
+        - css/custom_style.css
+  - social
+
+extra:
+  generator: false
+  version:
+    provider: mike
+  analytics:
+    provider: google
+    property: G-TODO
+  consent:
+    title: Cookie consent
+    description: >-
+      We use cookies to recognize your repeated visits and preferences, as well
+      as to measure the effectiveness of the website and whether users
+      find what they're searching for. With your consent, you're helping us to
+      make our website better.
+    actions:
+      - accept
+      - reject
+      - manage
+
+extra_css:
+  - css/custom_style.css
+
+extra_javascript:
+  - javascripts/links_in_new_tabs.js
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - extra
+  - nl2br
+  - pymdownx.magiclink
+  - pymdownx.details
+  - sane_lists
+  - smarty
+  - md_in_html
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.blocks.html
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format

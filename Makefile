@@ -1,4 +1,4 @@
-
+# Default target
 .DEFAULT_GOAL := help
 
 # termninal colors # {{{
@@ -25,6 +25,7 @@ BOLD_BLUE=\\033[${BOLD};${BLUE}m
 BOLD_CYAN=\\033[${BOLD};${CYAN}m
 # }}}
 
+MKDOCS = mkdocs
 UV = uv run
 
 #		$$(uv tree --depth 1 --no-dev --preview-features json-output --format json \
@@ -46,6 +47,7 @@ DEPENDENCIES_DEV =$(shell $(UV) tomlq -r ' \
 )
 
 .PHONY: uv.lock requirements.txt
+.PHONY: wakemeops-keyring.asc
 
 install: ## install git-wrench via Homebrew from local formula
 	$(eval VERSION := $(shell uv run tomlq -r '.project.version' pyproject.toml))
@@ -68,7 +70,7 @@ install-dev: ## install required dependencies for local development (developers 
 sync:
 	uv sync
 
-up update:: uv.lock requirements.txt
+up update: uv.lock requirements.txt wakemeops-keyring.asc
 	$(UV) pre-commit autoupdate
 
 uv.lock:
@@ -85,8 +87,27 @@ upgrade-dev:
 	@echo DEPENDENCIES_DEV=$(DEPENDENCIES_DEV)
 	uv add --group dev --upgrade $(DEPENDENCIES_DEV)
 
+wakemeops-keyring.asc:
+	curl -sSL https://raw.githubusercontent.com/upciti/wakemeops/main/assets/install_repository | \
+		sed -n '/-----BEGIN PGP PUBLIC KEY BLOCK-----/,/-----END PGP PUBLIC KEY BLOCK-----/p' > $@
 
 dep: uv.lock requirements.txt
+
+test-dep: ## Check that requirements.txt is in sync with uv.lock
+	@uv export --format requirements.txt --output-file /tmp/.requirements.txt.check > /dev/null
+	@grep -v '^#' requirements.txt > /tmp/.requirements.txt.committed
+	@grep -v '^#' /tmp/.requirements.txt.check > /tmp/.requirements.txt.fresh
+	@if ! diff -q /tmp/.requirements.txt.committed /tmp/.requirements.txt.fresh > /dev/null 2>&1; then \
+	   echo ""; \
+	   echo "ERROR: requirements.txt is out of sync with uv.lock."; \
+	   echo ""; \
+	   echo "Diff (committed vs. current export):"; \
+	   diff -u /tmp/.requirements.txt.committed /tmp/.requirements.txt.fresh || true; \
+	   echo ""; \
+	   echo "Fix: run 'make dep' locally and commit the updated requirements.txt."; \
+	   exit 1; \
+	 fi
+	@echo "OK: requirements.txt is in sync with uv.lock."
 
 hooks:
 	$(UV) pre-commit run --all-files
@@ -119,16 +140,42 @@ test-pytest:
 test-coverage:
 	$(UV) pytest --cov
 
-test-secrets:
-	@echo "--- Running detect-secrets `$(UV) detect-secrets --version` ---"
-	@git ls-files -z -- \
-		| xargs -0 $(UV) detect-secrets-hook --baseline .secrets.baseline
-
 scan: ## run detect-secrets
 	$(UV) detect-secrets scan --update .secrets.baseline
 
 audit:
 	$(UV) detect-secrets audit .secrets.baseline
+
+test-secrets: ## detect-secrets: verify baseline is up-to-date and all findings are audited
+	@echo "--- detect-secrets $(shell $(UV) detect-secrets --version) ---"
+	@cp .secrets.baseline /tmp/.secrets.baseline.check
+	@$(UV) detect-secrets scan --update /tmp/.secrets.baseline.check
+	@jq '{results,plugins_used,version,word_list}' .secrets.baseline            > /tmp/.secrets.baseline.committed
+	@jq '{results,plugins_used,version,word_list}' /tmp/.secrets.baseline.check > /tmp/.secrets.baseline.fresh
+	@if ! diff -q /tmp/.secrets.baseline.committed /tmp/.secrets.baseline.fresh > /dev/null 2>&1; then \
+	   echo ""; \
+	   echo "ERROR: .secrets.baseline is out of date."; \
+	   echo "New findings or removed files were detected since the last 'make scan'."; \
+	   echo ""; \
+	   echo "Diff (committed vs. current scan):"; \
+	   diff -u /tmp/.secrets.baseline.committed /tmp/.secrets.baseline.fresh || true; \
+	   echo ""; \
+	   echo "Fix: run 'make scan' locally, audit any new findings with 'make audit',"; \
+	   echo "     then commit the updated .secrets.baseline."; \
+	   exit 1; \
+	 fi
+	@unaudited=$$(jq -r '.results | to_entries[] | .key as $$f | .value[] | select(.is_secret == null) | "\($$f):\(.line_number) [\(.type)]"' /tmp/.secrets.baseline.check); \
+	 if [ -n "$$unaudited" ]; then \
+	   echo ""; \
+	   echo "ERROR: unaudited findings in .secrets.baseline (is_secret is null)."; \
+	   echo "Run 'make audit' to review each entry and mark it is_secret: true/false."; \
+	   echo ""; \
+	   echo "Unaudited entries:"; \
+	   echo "$$unaudited"; \
+	   echo ""; \
+	   exit 1; \
+	 fi
+	@echo "OK: .secrets.baseline is up-to-date and all findings are audited."
 
 test-security:
 	$(UV) bandit -r . -c pyproject.toml
@@ -136,7 +183,20 @@ test-security:
 test-audit:
 	$(UV) pip-audit
 
-test:: test-format test-lint test-typecheck test-pytest test-secrets test-security test-audit ## run tests
+test:: test-format test-lint test-typecheck test-pytest test-secrets test-security test-audit test-build ## run tests
+
+test-build:
+	$(UV) $(MKDOCS) build --strict
+
+build:
+	$(UV) $(MKDOCS) build --config-file mkdocs.yml --strict
+
+serve: ## start local server for website development
+	$(UV) $(MKDOCS) serve --livereload -o --dev-addr 127.0.0.1:13800
+
+deploy: ## generate new version of static website from markdown files
+	$(UV) $(MKDOCS) gh-deploy --config-file mkdocs.yml --remote-branch gh-pages
+	git push gitolite gh-pages origin/gh-pages
 
 deb: ## build Debian package using dpkg-buildpackage
 	@mkdir -p dist/deb
@@ -165,5 +225,15 @@ clean: ## cleanup Untitled documents and empty directories
 	find . -type d -name ".coverage" -exec rm -rf {} +
 	rm -rf htmlcov
 	rm -f .coverage
+
+GEN_BADGE_VAL = posts-count.svg
+
+generate-badge:
+	@COUNT=$$(find docs/ -name "*.md" | wc -l); \
+	printf '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="20">\
+	<rect width="60" height="20" fill="#555"/><rect x="60" width="30" height="20" fill="#4c1"/>\
+	<g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">\
+	<text x="30" y="14">posts</text><text x="75" y="14">%s</text></g></svg>' "$$COUNT" > $(GEN_BADGE_VAL)
+	@echo "Posts Count badge generated: $$COUNT posts"
 
 # vim: fdm=marker
