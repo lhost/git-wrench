@@ -23,7 +23,8 @@ RUN apt-get update && apt-get install -y \
 
 RUN apt-get install -y \
     default-libmysqlclient-dev \
-	python3-cairo
+	python3-cairo \
+    libatomic1
 
 # install uv from wakemeops repo:
 RUN apt-get install -y \
