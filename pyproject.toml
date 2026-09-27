@@ -28,6 +28,7 @@ dev = [
     "mkdocs-callouts",
     "mkdocs-include-markdown-plugin",
     "mkdocs-material",
+    "mkdocs-material[imaging]",
     "mkdocs-mermaid2-plugin",
     "mkdocs-minify-plugin",
     "mkdocs-redirects",
@@ -135,3 +136,5 @@ detect-secrets = { url = "https://github.com/IBM/detect-secrets/archive/refs/tag
 [tool.hatch.build.targets.wheel]
 packages = ["git_wrench"]
 include   = ["main.py"]
+
+# vim: ts=4 expandtab
