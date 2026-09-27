@@ -4,6 +4,15 @@ version = "0.1.0"
 description = "terminal-based multi-repo git workspace manager"
 readme = "README.md"
 requires-python = ">=3.14"
+authors = [
+    { name = "Lubomir Host", email = "lubomir.host@gmail.com" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
 dependencies = [
     "tomli-w",
 ]
