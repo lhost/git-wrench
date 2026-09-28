@@ -74,7 +74,7 @@ build-ci-image:
         buildah pull $LATEST_IMAGE >/dev/null 2>&1 || true
 
         # Build the new tag and update the latest reference simultaneously
-        buildah build --format oci -t $CUSTOM_IMAGE -t $LATEST_IMAGE .
+        buildah bud --cache-from $CI_REGISTRY_IMAGE --format oci -t $CUSTOM_IMAGE -t $LATEST_IMAGE .
         buildah push $CUSTOM_IMAGE
         buildah push $LATEST_IMAGE
       fi
@@ -105,7 +105,7 @@ build-deb-image:
         buildah pull $LATEST_IMAGE_DEB >/dev/null 2>&1 || true
 
         # Build the new tag and update the latest reference simultaneously
-        buildah build --format oci -t $CUSTOM_IMAGE_DEB -t $LATEST_IMAGE_DEB -f debian/Dockerfile .
+        buildah bud --cache-from $LATEST_IMAGE_DEB= --format oci -t $CUSTOM_IMAGE_DEB -t $LATEST_IMAGE_DEB -f debian/Dockerfile .
         buildah push $CUSTOM_IMAGE_DEB
         buildah push $LATEST_IMAGE_DEB
       fi
@@ -136,7 +136,7 @@ build-rpm-image:
         buildah pull $LATEST_IMAGE_RPM >/dev/null 2>&1 || true
 
         # Build the new tag and update the latest reference simultaneously
-        buildah build --format oci -t $CUSTOM_IMAGE_RPM -t $LATEST_IMAGE_RPM -f centos/Dockerfile .
+        buildah bud --cache-from $LATEST_IMAGE_RPM --format oci -t $CUSTOM_IMAGE_RPM -t $LATEST_IMAGE_RPM -f centos/Dockerfile .
         buildah push $CUSTOM_IMAGE_RPM
         buildah push $LATEST_IMAGE_RPM
       fi
