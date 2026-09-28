@@ -34,9 +34,9 @@ generate-env:
     # date +%y  -> 26 (short year)
     # %-m / %-d -> removes leading zeros (e.g., 4 instead of 04)
     - export DATE_PART=$(date +%y.%-m.%-d)
-    - export HASH_PART=$(cat Dockerfile wakemeops-keyring.asc pyproject.toml uv.lock .gitlab-ci.yml | sha256sum | cut -c1-7)
-    - export HASH_PART_DEB=$(cat debian/Dockerfile .gitlab-ci.yml | sha256sum | cut -c1-7)
-    - export HASH_PART_RPM=$(cat centos/Dockerfile .gitlab-ci.yml | sha256sum | cut -c1-7)
+    - export HASH_PART=$(cat Dockerfile wakemeops-keyring.asc pyproject.toml uv.lock | sha256sum | cut -c1-7)
+    - export HASH_PART_DEB=$(cat debian/Dockerfile | sha256sum | cut -c1-7)
+    - export HASH_PART_RPM=$(cat centos/Dockerfile | sha256sum | cut -c1-7)
     - export TAG="${DATE_PART}-${HASH_PART}"
     - export TAG_DEB="deb-${DATE_PART}-${HASH_PART_DEB}"
     - export TAG_RPM="rpm-${DATE_PART}-${HASH_PART_RPM}"
@@ -74,7 +74,7 @@ build-ci-image:
         buildah pull $LATEST_IMAGE >/dev/null 2>&1 || true
 
         # Build the new tag and update the latest reference simultaneously
-        buildah bud --cache-from $CI_REGISTRY_IMAGE --format oci -t $CUSTOM_IMAGE -t $LATEST_IMAGE .
+        buildah build --format oci -t $CUSTOM_IMAGE -t $LATEST_IMAGE .
         buildah push $CUSTOM_IMAGE
         buildah push $LATEST_IMAGE
       fi
@@ -105,7 +105,7 @@ build-deb-image:
         buildah pull $LATEST_IMAGE_DEB >/dev/null 2>&1 || true
 
         # Build the new tag and update the latest reference simultaneously
-        buildah bud --cache-from $CI_REGISTRY_IMAGE --format oci -t $CUSTOM_IMAGE_DEB -t $LATEST_IMAGE_DEB -f debian/Dockerfile .
+        buildah build --format oci -t $CUSTOM_IMAGE_DEB -t $LATEST_IMAGE_DEB -f debian/Dockerfile .
         buildah push $CUSTOM_IMAGE_DEB
         buildah push $LATEST_IMAGE_DEB
       fi
@@ -136,7 +136,7 @@ build-rpm-image:
         buildah pull $LATEST_IMAGE_RPM >/dev/null 2>&1 || true
 
         # Build the new tag and update the latest reference simultaneously
-        buildah bud --cache-from $CI_REGISTRY_IMAGE --format oci -t $CUSTOM_IMAGE_RPM -t $LATEST_IMAGE_RPM -f centos/Dockerfile .
+        buildah build --format oci -t $CUSTOM_IMAGE_RPM -t $LATEST_IMAGE_RPM -f centos/Dockerfile .
         buildah push $CUSTOM_IMAGE_RPM
         buildah push $LATEST_IMAGE_RPM
       fi
