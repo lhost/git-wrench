@@ -26,6 +26,9 @@ nav:
     - List: branch/list.md
     - Rebase: branch/rebase.md
     - Gone: branch/gone.md
+  - Commit:
+    - commit/index.md
+    - Split: commit/split.md
 
 theme:
   name: material
