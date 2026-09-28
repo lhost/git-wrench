@@ -196,6 +196,7 @@ build-packages-deb:
   stage: build
   needs:
     - job: build-deb-image
+    - job: run-tests
   image: $CUSTOM_IMAGE_DEB
   variables:
     GIT_DEPTH: 0
@@ -214,6 +215,7 @@ build-packages-rpm:
   stage: build
   needs:
     - job: build-rpm-image
+    - job: run-tests
   image: $CUSTOM_IMAGE_RPM
   variables:
     # Do not inherit the global uv/pip cache keys — not relevant for an rpm build
