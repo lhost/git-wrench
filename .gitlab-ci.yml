@@ -128,7 +128,7 @@ build-packages-deb:
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends
       debhelper dh-python python3-all python3-hatchling python3-installer
-      python3-build pybuild-plugin-pyproject
+      python3-build pybuild-plugin-pyproject build-essential
   script:
     - make deb
   artifacts:
