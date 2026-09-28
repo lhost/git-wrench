@@ -632,6 +632,7 @@ dev = [
     { name = "mkdocs-awesome-pages-plugin" },
     { name = "mkdocs-blog-plugin" },
     { name = "mkdocs-callouts" },
+    { name = "mkdocs-exclude" },
     { name = "mkdocs-include-markdown-plugin" },
     { name = "mkdocs-material", extra = ["imaging"] },
     { name = "mkdocs-mermaid2-plugin" },
@@ -665,6 +666,7 @@ dev = [
     { name = "mkdocs-awesome-pages-plugin" },
     { name = "mkdocs-blog-plugin" },
     { name = "mkdocs-callouts" },
+    { name = "mkdocs-exclude", specifier = ">=1.0.2" },
     { name = "mkdocs-include-markdown-plugin" },
     { name = "mkdocs-material" },
     { name = "mkdocs-material", extras = ["imaging"] },
@@ -971,6 +973,15 @@ sdist = { url = "https://files.pythonhosted.org/packages/50/f8/a174f4111a3d80473
 wheels = [
     { url = "https://files.pythonhosted.org/packages/94/fb/6477451a2ee6bb5c0db09a188f93d3b9ad8711787ecf46844bd7b1273ff9/mkdocs_callouts-1.17.1-py3-none-any.whl", hash = "sha256:6db15c3a32b95e986e04ac86a713a83249603f56b9ba782a02b106245270807a", size = 9607, upload-time = "2026-08-27T17:40:01.756Z" },
 ]
+
+[[package]]
+name = "mkdocs-exclude"
+version = "1.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mkdocs" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/54/b5/3a8e289282c9e8d7003f8a2f53d673d4fdaa81d493dc6966092d9985b6fc/mkdocs-exclude-1.0.2.tar.gz", hash = "sha256:ba6fab3c80ddbe3fd31d3e579861fd3124513708271180a5f81846da8c7e2a51", size = 6751, upload-time = "2019-02-20T23:34:12.81Z" }
 
 [[package]]
 name = "mkdocs-get-deps"
