@@ -7,6 +7,12 @@ copyright: >
 
 nav:
   - Home: 'index.md'
+  - Installation:
+    - macOS: installation/macos.md
+    - Debian: installation/debian.md
+    - CentOS: installation/centos.md
+    - pipx: installation/pipx.md
+    - pip: installation/pip.md
   - Configuration: 'config.md'
   - Aliases: 'aliases.md'
   - Workspace:
