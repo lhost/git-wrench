@@ -171,6 +171,8 @@ run-tests:
 build-pages:
   stage: build
   needs:
+    - job: generate-env
+      artifacts: true
     - job: build-ci-image
     - job: run-tests
   script:
@@ -196,6 +198,8 @@ build-pages:
 build-packages-deb:
   stage: build
   needs:
+    - job: generate-env
+      artifacts: true
     - job: build-deb-image
     - job: run-tests
   image: $CUSTOM_IMAGE_DEB
@@ -215,6 +219,8 @@ build-packages-deb:
 build-packages-rpm:
   stage: build
   needs:
+    - job: generate-env
+      artifacts: true
     - job: build-rpm-image
     - job: run-tests
   image: $CUSTOM_IMAGE_RPM
@@ -236,6 +242,8 @@ build-packages-rpm:
 # Force pushes the build-only branches to your external mirror
 mirror-to-external:
   stage: mirror
+  needs:
+    - job: build-pages
   <<: *ssh_setup
   script:
     - git remote add mirror $MIRROR_URL
@@ -256,7 +264,7 @@ mirror-to-external:
 deploy:
   stage: deploy
   needs:
-    - job: build-pages
+    - job: mirror-to-external
   <<: *ssh_setup
   script:
     # We fetch from the mirror on the server itself to keep it updated
