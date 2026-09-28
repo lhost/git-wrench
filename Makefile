@@ -200,7 +200,10 @@ deploy: ## generate new version of static website from markdown files
 
 deb: ## build Debian package using dpkg-buildpackage
 	@mkdir -p dist/deb
-	dpkg-buildpackage -us -uc -b --output-dir "$$(pwd)/dist/deb"
+	dpkg-buildpackage -us -uc -b
+	find .. -maxdepth 1 -type f \
+		\( -name '*.deb' -o -name '*.changes' -o -name '*.buildinfo' \) \
+		-exec mv {} dist/deb/ \;
 
 rpm: ## build RPM package using rpmbuild
 	@VERSION=$$(uv run tomlq -r '.project.version' pyproject.toml); \
