@@ -105,7 +105,7 @@ build-deb-image:
         buildah pull $LATEST_IMAGE_DEB >/dev/null 2>&1 || true
 
         # Build the new tag and update the latest reference simultaneously
-        buildah bud --layer --cache-from $CI_REGISTRY_IMAGE/cache-deb --cache-to $CI_REGISTRY_IMAGE/cache-deb --format oci -t $CUSTOM_IMAGE_DEB -t $LATEST_IMAGE_DEB -f debian/Dockerfile .
+        buildah bud --layers --cache-from $CI_REGISTRY_IMAGE/cache-deb --cache-to $CI_REGISTRY_IMAGE/cache-deb --format oci -t $CUSTOM_IMAGE_DEB -t $LATEST_IMAGE_DEB -f debian/Dockerfile .
         buildah push $CUSTOM_IMAGE_DEB
         buildah push $LATEST_IMAGE_DEB
       fi
