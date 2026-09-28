@@ -147,6 +147,8 @@ build-packages-rpm:
     # Do not inherit the global uv/pip cache keys — not relevant for an rpm build
     GIT_DEPTH: 0
   before_script:
+    - dnf config-manager --set-enabled crb
+    - dnf install -y epel-release
     - dnf install -y rpm-build python3-devel python3-pip python3-wheel
       python3-build python3-installer python3-hatchling make curl
   script:
