@@ -666,7 +666,7 @@ dev = [
     { name = "mkdocs-awesome-pages-plugin" },
     { name = "mkdocs-blog-plugin" },
     { name = "mkdocs-callouts" },
-    { name = "mkdocs-exclude", specifier = ">=1.0.2" },
+    { name = "mkdocs-exclude" },
     { name = "mkdocs-include-markdown-plugin" },
     { name = "mkdocs-material" },
     { name = "mkdocs-material", extras = ["imaging"] },

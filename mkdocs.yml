@@ -46,9 +46,9 @@ plugins:
   - privacy
   - search
   - exclude:
-    glob:
-      - "*~"
-      - ".*.sw?"
+      glob:
+        - "*~"
+        - ".*.sw?"
   - callouts
   - mermaid2
   - include-markdown:
