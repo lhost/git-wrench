@@ -244,6 +244,7 @@ mirror-doc-to-external:
   stage: mirror
   needs:
     - job: build-pages
+  image: $CUSTOM_IMAGE
   <<: *ssh_setup
   script:
     - git remote add mirror $MIRROR_URL
@@ -265,6 +266,7 @@ deploy-doc:
   stage: deploy
   needs:
     - job: mirror-doc-to-external
+  image: $CUSTOM_IMAGE
   <<: *ssh_setup
   script:
     # We fetch from the mirror on the server itself to keep it updated
