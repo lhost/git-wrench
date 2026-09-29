@@ -8,12 +8,15 @@ URL:            https://github.com/lhost/git-wrench
 Source0:        %{url}/archive/refs/tags/v%{version}/%{name}-%{version}.tar.gz
 
 BuildArch:      noarch
+BuildRequires:  pyproject-rpm-macros
 BuildRequires:  python3-devel
 BuildRequires:  python3-pip
 BuildRequires:  python3-wheel
 BuildRequires:  python3-build
 BuildRequires:  python3-installer
 BuildRequires:  python3-hatchling
+BuildRequires:  python3-pytest
+BuildRequires:  python3-tomli-w
 
 Requires:       git
 Requires:       python3
