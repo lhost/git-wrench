@@ -5,7 +5,7 @@ Summary:        Terminal-based multi-repo git workspace manager
 
 License:        MIT
 URL:            https://github.com/lhost/git-wrench
-Source0:        %{url}/archive/refs/tags/v%{version}.tar.gz
+Source0:        %{url}/archive/refs/tags/v%{version}/%{name}-%{version}.tar.gz
 
 BuildArch:      noarch
 BuildRequires:  python3-devel
