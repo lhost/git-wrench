@@ -7,6 +7,18 @@ copyright: >
 
 nav:
   - Home: 'index.md'
+  - Workspace:
+    - workspace/index.md
+    - Status: workspace/status.md
+    - Sync: workspace/sync.md
+    - List: workspace/list.md
+    - Add: workspace/add.md
+    - Remove: workspace/remove.md
+    - Rename: workspace/rename.md
+    - List Servers: workspace/list-servers.md
+    - Add Server: workspace/add-server.md
+    - Remove Server: workspace/remove-server.md
+    - Add Token: workspace/add-token.md
 
 theme:
   name: material
