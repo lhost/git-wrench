@@ -1,0 +1,45 @@
+services:
+  python:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: python
+    volumes:
+      - .:/app
+    working_dir: /app
+    environment:
+      - GIT_CONFIG_COUNT=1
+      - GIT_CONFIG_KEY_0=safe.directory
+      - GIT_CONFIG_VALUE_0=*
+    stdin_open: true
+    tty: true
+
+  debian:
+    build:
+      context: .
+      dockerfile: debian/Dockerfile
+    container_name: debian
+    volumes:
+      - .:/app
+    working_dir: /app
+    environment:
+      - GIT_CONFIG_COUNT=1
+      - GIT_CONFIG_KEY_0=safe.directory
+      - GIT_CONFIG_VALUE_0=*
+    stdin_open: true
+    tty: true
+
+  centos:
+    build:
+      context: .
+      dockerfile: centos/Dockerfile
+    container_name: centos
+    volumes:
+      - .:/app
+    working_dir: /app
+    environment:
+      - GIT_CONFIG_COUNT=1
+      - GIT_CONFIG_KEY_0=safe.directory
+      - GIT_CONFIG_VALUE_0=*
+    stdin_open: true
+    tty: true

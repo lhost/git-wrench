@@ -1,7 +1,9 @@
 FROM python:3.14-slim
 
 # https://raw.githubusercontent.com/upciti/wakemeops/main/assets/install_repository
+RUN install -d -m 0755 /etc/apt/keyrings
 COPY wakemeops-keyring.asc /etc/apt/keyrings/wakemeops-keyring.asc
+RUN chmod 0644 /etc/apt/keyrings/wakemeops-keyring.asc
 RUN cat <<'EOF' >/etc/apt/sources.list.d/wakemeops.sources
 Components: dev devops secops terminal desktop
 Enabled: yes
