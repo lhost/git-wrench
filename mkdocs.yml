@@ -8,6 +8,7 @@ copyright: >
 nav:
   - Home: 'index.md'
   - Configuration: 'config.md'
+  - Aliases: 'aliases.md'
   - Workspace:
     - workspace/index.md
     - Status: workspace/status.md
@@ -25,6 +26,9 @@ nav:
     - List: branch/list.md
     - Rebase: branch/rebase.md
     - Gone: branch/gone.md
+  - Commit:
+    - commit/index.md
+    - Split: commit/split.md
 
 theme:
   name: material
