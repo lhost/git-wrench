@@ -46,3 +46,4 @@ See the **[full documentation](https://git-wrench.dev)** for detailed usage of a
 | `branch rebase` | [git-wrench.dev/branch/rebase/](https://git-wrench.dev/branch/rebase/) |
 | `workspace` | [git-wrench.dev/workspace/](https://git-wrench.dev/workspace/) |
 | Configuration | [git-wrench.dev/config/](https://git-wrench.dev/config/) |
+| Aliases | [git-wrench.dev/aliases/](https://git-wrench.dev/aliases/) |

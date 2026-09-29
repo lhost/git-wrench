@@ -8,6 +8,7 @@ copyright: >
 nav:
   - Home: 'index.md'
   - Configuration: 'config.md'
+  - Aliases: 'aliases.md'
   - Workspace:
     - workspace/index.md
     - Status: workspace/status.md
