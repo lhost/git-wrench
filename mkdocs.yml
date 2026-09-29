@@ -19,6 +19,11 @@ nav:
     - Add Server: workspace/add-server.md
     - Remove Server: workspace/remove-server.md
     - Add Token: workspace/add-token.md
+  - Branch:
+    - branch/index.md
+    - List: branch/list.md
+    - Rebase: branch/rebase.md
+    - Gone: branch/gone.md
 
 theme:
   name: material
