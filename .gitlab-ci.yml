@@ -240,7 +240,7 @@ build-packages-rpm:
 
 # --- MIRROR STAGE ---
 # Force pushes the build-only branches to your external mirror
-mirror-to-external:
+mirror-doc-to-external:
   stage: mirror
   needs:
     - job: build-pages
@@ -261,7 +261,7 @@ mirror-to-external:
 
 # --- DEPLOY STAGE ---
 # SSH into the server and tell it to pull from the Mirror
-deploy:
+deploy-doc:
   stage: deploy
   needs:
     - job: mirror-to-external
