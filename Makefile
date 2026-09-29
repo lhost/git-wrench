@@ -206,12 +206,13 @@ deb: ## build Debian package using dpkg-buildpackage
 		-exec mv {} dist/deb/ \;
 
 rpm: ## build RPM package using rpmbuild
-	@VERSION=$$(uv run tomlq -r '.project.version' pyproject.toml); \
+	@VERSION=$$(sed -n 's/^version *= *"\([^"]*\)".*/\1/p' pyproject.toml); \
 	TOPDIR="$$(pwd)/dist/rpmbuild"; \
 	mkdir -p "$${TOPDIR}"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}; \
 	cp git-wrench.spec "$${TOPDIR}/SPECS/git-wrench.spec"; \
 	curl -fsSL "https://github.com/lhost/git-wrench/archive/refs/tags/v$${VERSION}.tar.gz" \
-	    -o "$${TOPDIR}/SOURCES/git-wrench-$${VERSION}.tar.gz"; \
+	    -o "$${TOPDIR}/SOURCES/git-wrench-$${VERSION}.tar.gz" || \
+	git archive --format=tar.gz --prefix=git-wrench-$${VERSION}/ HEAD > "$${TOPDIR}/SOURCES/git-wrench-$${VERSION}.tar.gz"; \
 	rpmbuild --define "_topdir $${TOPDIR}" -ba "$${TOPDIR}/SPECS/git-wrench.spec"
 
 clean-homebrew: ## remove Homebrew tap
