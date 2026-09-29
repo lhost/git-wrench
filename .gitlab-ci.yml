@@ -243,6 +243,8 @@ build-packages-rpm:
 mirror-doc-to-external:
   stage: mirror
   needs:
+    - job: generate-env
+      artifacts: true
     - job: build-pages
   image: $CUSTOM_IMAGE
   <<: *ssh_setup
@@ -265,6 +267,8 @@ mirror-doc-to-external:
 deploy-doc:
   stage: deploy
   needs:
+    - job: generate-env
+      artifacts: true
     - job: mirror-doc-to-external
   image: $CUSTOM_IMAGE
   <<: *ssh_setup
