@@ -1,5 +1,6 @@
 # git-wrench documentation
 
+![git-wrench logo](assets/images/git-wrench-logo.png)
 
 A command-line tool for automating common Git tasks.
 
