@@ -4,19 +4,96 @@
 
 /* 1. CORE COLOR TOKENS & OVERRIDES
    ========================================================================== */
+
+/* Common / Shared variables */
+:root {
+  --md-font-text: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --md-font-code: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* --- LIGHT MODE (Cyberpunk Dawn / Light Sunset) --- */
 :root,
-[data-md-color-scheme="slate"],
 [data-md-color-scheme="default"] {
+  /* Material Theme Variables Override */
+  --md-primary-fg-color:        #ffffff !important;
+  --md-primary-fg-color--dark:  #f3edf7 !important;
+  --md-primary-fg-color--light: #ffffff !important;
+  --md-primary-bg-color:        #231834 !important;
+  --md-accent-fg-color:         #e65100 !important;
+
+  --md-default-bg-color:        #fbfaff;
+  --md-default-fg-color:        #241c30;
+  --md-default-fg-color--light: #6b5e7e;
+
+  /* Custom Color Palette */
+  --bg-main:                    #fbfaff; /* Soft bright canvas */
+  --bg-surface:                 #ffffff; /* Pure white elevated card */
+  --bg-header:                  #ffffff; /* Crisp white header */
+  --bg-footer:                  #f3edf7; /* Soft lavender footer */
+  --bg-code:                    #f5f0fa; /* Soft purple-tinted code bg */
+  --bg-table-th:                #f3edf7; /* Table header bg */
+
+  --header-fg:                  #231834; /* Dark text/icons on white header */
+  --header-title-accent:        #e65100; /* Warm orange title highlight */
+  --header-shadow:              0 2px 12px rgba(35, 24, 52, 0.08), 0 1px 4px rgba(230, 81, 0, 0.15);
+
+  --accent-orange:              #e65100; /* High-contrast sunset orange */
+  --accent-orange-light:        #d85a00; /* Readable orange for links/highlights */
+  --accent-orange-glow:         rgba(230, 81, 0, 0.1);
+
+  --accent-purple:              #7b2cbf; /* High-contrast vivid purple */
+  --accent-purple-light:        #9d4edd; /* Medium purple */
+
+  --text-main:                  #241c30; /* High-contrast deep plum/slate */
+  --text-muted:                 #6b5e7e; /* Readable muted text */
+  --text-heading:               #1a1028; /* Bold heading color */
+  --text-subheading:            #6a1b9a; /* Readable purple subheadings */
+
+  --link-color:                 #c44d00;
+  --link-hover:                 #7b2cbf;
+  --link-code-border:           rgba(196, 77, 0, 0.35);
+  --link-code-hover-bg:         rgba(230, 81, 0, 0.12);
+
+  --table-border:               1px solid rgba(123, 44, 191, 0.2);
+  --table-th-border:            2px solid var(--accent-orange);
+  --table-td-border:            1px solid rgba(123, 44, 191, 0.12);
+  --table-shadow:               0 4px 20px rgba(35, 24, 52, 0.06);
+  --table-hover-bg:             rgba(230, 81, 0, 0.08);
+  --table-hover-text:           #1a1028;
+
+  --code-border:                1px solid rgba(230, 81, 0, 0.25);
+  --code-block-border:          1px solid rgba(123, 44, 191, 0.2);
+
+  --footer-border:              1px solid rgba(123, 44, 191, 0.15);
+  --scrollbar-track:            #f5f0fa;
+  --scrollbar-thumb:            #b892e8;
+  --scrollbar-thumb-hover:      #e65100;
+}
+
+/* --- DARK MODE (Cyberpunk Sunset Obsidian & Neon) --- */
+[data-md-color-scheme="slate"] {
   /* Material Theme Variables Override */
   --md-primary-fg-color:        #231834 !important;
   --md-primary-fg-color--dark:  #191026 !important;
   --md-primary-fg-color--light: #2e1f45 !important;
+  --md-primary-bg-color:        #ffffff !important;
   --md-accent-fg-color:         #ff7a00 !important;
+
+  --md-default-bg-color:        #0d0914;
+  --md-default-fg-color:        #e2d9f3;
+  --md-default-fg-color--light: #a69ab8;
 
   /* Custom Color Palette */
   --bg-main:                    #0d0914; /* Dark obsidian base background */
   --bg-surface:                 #1a1228; /* Elevated surface card color */
   --bg-header:                  #231834; /* Distinct header color for contrast */
+  --bg-footer:                  #08040d; /* Deep dark footer */
+  --bg-code:                    #08040d; /* Dark code block bg */
+  --bg-table-th:                #120b1c; /* Dark table header bg */
+
+  --header-fg:                  #ffffff; /* White text/icons on dark header */
+  --header-title-accent:        #ffaa5b; /* Soft neon orange title highlight */
+  --header-shadow:              0 4px 25px rgba(0, 0, 0, 0.7), 0 2px 10px rgba(255, 122, 0, 0.25);
 
   --accent-orange:              #ff7a00; /* Primary neon orange accent */
   --accent-orange-light:        #ffaa5b; /* Soft warm orange for highlights */
@@ -27,15 +104,33 @@
 
   --text-main:                  #e2d9f3;
   --text-muted:                 #a69ab8;
+  --text-heading:               #ffffff;
+  --text-subheading:            #c77dff;
 
-  --md-font-text: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --md-font-code: 'JetBrains Mono', 'Fira Code', monospace;
+  --link-color:                 #ffaa5b;
+  --link-hover:                 #ffffff;
+  --link-code-border:           rgba(255, 170, 91, 0.45);
+  --link-code-hover-bg:         rgba(255, 122, 0, 0.18);
+
+  --table-border:               1px solid rgba(157, 78, 221, 0.3);
+  --table-th-border:            2px solid rgba(255, 122, 0, 0.4);
+  --table-td-border:            1px solid rgba(157, 78, 221, 0.15);
+  --table-shadow:               0 8px 30px rgba(0, 0, 0, 0.5);
+  --table-hover-bg:             var(--accent-orange-glow);
+  --table-hover-text:           #ffffff;
+
+  --code-border:                1px solid rgba(255, 122, 0, 0.3);
+  --code-block-border:          1px solid rgba(157, 78, 221, 0.2);
+
+  --footer-border:              1px solid rgba(255, 122, 0, 0.2);
+  --scrollbar-track:            #0d0914;
+  --scrollbar-thumb:            #9d4edd;
+  --scrollbar-thumb-hover:      #ff7a00;
 }
 
 /* 2. BODY & PAGE LAYOUT
    ========================================================================== */
 body,
-[data-md-color-scheme="slate"],
 .md-container {
   background-color: var(--bg-main) !important;
   color: var(--text-main);
@@ -43,33 +138,29 @@ body,
 
 /* 3. HEADER & NAVIGATION (HIGH CONTRAST ELEVATION)
    ========================================================================== */
-.md-header,
-[data-md-color-scheme="default"] .md-header,
-[data-md-color-scheme="slate"] .md-header,
-[data-md-color-primary] .md-header {
+.md-header {
   background-color: var(--bg-header) !important;
   border-bottom: 2px solid var(--accent-orange) !important;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.7), 0 2px 10px rgba(255, 122, 0, 0.25) !important;
+  box-shadow: var(--header-shadow) !important;
 }
 
 .md-header__title {
-  color: #ffffff !important;
+  color: var(--header-fg) !important;
 }
 
 .md-header__title span {
-  color: var(--accent-orange-light) !important;
+  color: var(--header-title-accent) !important;
   font-weight: 700;
 }
 
 .md-header__button {
-  color: #ffffff !important;
+  color: var(--header-fg) !important;
 }
 
 /* Navigation Tabs Bar (if enabled) */
-.md-tabs,
-[data-md-color-scheme="slate"] .md-tabs {
+.md-tabs {
   background-color: var(--md-primary-fg-color--dark) !important;
-  border-bottom: 1px solid rgba(255, 122, 0, 0.3) !important;
+  border-bottom: 1px solid var(--footer-border) !important;
 }
 
 .md-tabs__link {
@@ -87,7 +178,7 @@ article h1 {
   font-size: 2.35rem;
   font-weight: 800;
   letter-spacing: -0.03em;
-  background: linear-gradient(135deg, var(--accent-purple-light) 0%, var(--accent-orange) 100%);
+  background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-orange) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 0.5rem;
@@ -100,7 +191,7 @@ article > p:first-of-type {
 }
 
 .md-typeset h2 {
-  color: #ffffff;
+  color: var(--text-heading);
   border-left: 4px solid var(--accent-purple);
   padding-left: 12px;
   font-weight: 700;
@@ -108,31 +199,31 @@ article > p:first-of-type {
 
 .md-typeset h3,
 .md-typeset h4 {
-  color: var(--accent-purple-light);
+  color: var(--text-subheading);
 }
 
 /* Links */
 .md-typeset a {
-  color: var(--accent-orange-light);
+  color: var(--link-color);
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .md-typeset a:hover {
-  color: #ffffff;
+  color: var(--link-hover);
   text-decoration: none;
 }
 
 .md-typeset a code {
-  color: var(--accent-orange-light);
-  border-color: rgba(255, 170, 91, 0.45);
+  color: var(--link-color);
+  border-color: var(--link-code-border);
   transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .md-typeset a:hover code {
-  color: #ffffff;
+  color: var(--link-hover);
   border-color: var(--accent-orange);
-  background-color: rgba(255, 122, 0, 0.18);
+  background-color: var(--link-code-hover-bg);
 }
 
 /* 5. TABLES (CUSTOM CONTENT STYLING)
@@ -143,34 +234,34 @@ article > p:first-of-type {
   border-spacing: 0;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(157, 78, 221, 0.3);
+  box-shadow: var(--table-shadow);
+  border: var(--table-border);
   margin: 1.5rem 0;
   background-color: var(--bg-surface);
 }
 
 .md-typeset table:not([class]) th {
-  background-color: #120b1c;
+  background-color: var(--bg-table-th);
   color: var(--accent-orange);
   font-weight: 700;
   text-transform: uppercase;
   font-size: 0.85rem;
   letter-spacing: 0.05em;
   padding: 14px 18px;
-  border-bottom: 2px solid rgba(255, 122, 0, 0.4);
+  border-bottom: var(--table-th-border);
   text-align: left;
 }
 
 .md-typeset table:not([class]) td {
   padding: 14px 18px;
   color: var(--text-main);
-  border-bottom: 1px solid rgba(157, 78, 221, 0.15);
+  border-bottom: var(--table-td-border);
   transition: all 0.2s ease;
 }
 
 .md-typeset table:not([class]) tr:hover td {
-  background-color: var(--accent-orange-glow);
-  color: #ffffff;
+  background-color: var(--table-hover-bg);
+  color: var(--table-hover-text);
 }
 
 .md-typeset table:not([class]) tr:last-child td {
@@ -180,9 +271,9 @@ article > p:first-of-type {
 /* 6. CODE BLOCKS & INLINE CODE
    ========================================================================== */
 .md-typeset code {
-  background-color: #08040d;
+  background-color: var(--bg-code);
   color: var(--accent-orange-light);
-  border: 1px solid rgba(255, 122, 0, 0.3);
+  border: var(--code-border);
   border-radius: 6px;
   padding: 2px 7px;
   font-size: 0.875em;
@@ -190,8 +281,9 @@ article > p:first-of-type {
 }
 
 .md-typeset pre > code {
-  border: 1px solid rgba(157, 78, 221, 0.2);
-  background-color: #08040d !important;
+  border: var(--code-block-border);
+  background-color: var(--bg-code) !important;
+  color: var(--text-main);
 }
 
 /* 7. SIDEBAR NAVIGATION
@@ -201,7 +293,7 @@ article > p:first-of-type {
 }
 
 .md-nav__link:hover {
-  color: var(--accent-purple-light);
+  color: var(--accent-purple);
 }
 
 .md-nav__link--active {
@@ -212,8 +304,8 @@ article > p:first-of-type {
 /* 8. FOOTER & SCROLLBARS
    ========================================================================== */
 .md-footer {
-  background-color: #08040d !important;
-  border-top: 1px solid rgba(255, 122, 0, 0.2);
+  background-color: var(--bg-footer) !important;
+  border-top: var(--footer-border);
 }
 
 ::-webkit-scrollbar {
@@ -222,14 +314,34 @@ article > p:first-of-type {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-main);
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--accent-purple);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-orange);
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* 9. UTILITIES & LAYOUT
+   ========================================================================== */
+.video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  height: 0;
+}
+
+.video-container iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.md-grid {
+  max-width: 1440px;
 }
