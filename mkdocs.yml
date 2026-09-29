@@ -38,6 +38,8 @@ nav:
 
 theme:
   name: material
+  logo: assets/images/apple-touch-icon.png
+  favicon: assets/images/favicon.ico
   custom_dir: overrides
   language: en
   font:
@@ -60,9 +62,9 @@ theme:
         name: Switch to light mode
   features:
     - content.tabs.link
-  # - navigation.instant        # Disabled: breaks Reveal.js slide loading
-    - navigation.indexes  # Allows clicking on section headers
-    - navigation.tabs     # Top-level navigation tabs
+  # - navigation.instant # Disabled: breaks Reveal.js slide loading
+    - navigation.indexes # Allows clicking on section headers
+    - navigation.tabs    # Top-level navigation tabs
     - navigation.tabs.sticky
     - content.code.copy
 

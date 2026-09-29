@@ -156,6 +156,9 @@ body,
 .md-header__button {
   color: var(--header-fg) !important;
 }
+[data-md-color-scheme="slate"] .md-header__button img {
+  filter: brightness(0) invert(1); /* Turns dark text to white */
+}
 
 /* Navigation Tabs Bar (if enabled) */
 .md-tabs {
