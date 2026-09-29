@@ -7,6 +7,7 @@ copyright: >
 
 nav:
   - Home: 'index.md'
+  - Configuration: 'config.md'
   - Workspace:
     - workspace/index.md
     - Status: workspace/status.md
