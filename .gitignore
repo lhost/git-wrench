@@ -1,3 +1,11 @@
 .*.sw?
+.cache
 __pycache__
 site/
+.pybuild/
+debian/debhelper-build-stamp
+debian/.debhelper/
+debian/*.debhelper
+debian/files
+debian/git-wrench.substvars
+debian/git-wrench/
