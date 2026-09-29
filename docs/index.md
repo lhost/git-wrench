@@ -14,4 +14,4 @@ A command-line tool for automating common Git tasks.
 | **Sync** | Pull individual repos or all repos at once (fetch + fast-forward merge) |
 | **Config tab** | Edit workspace paths and sync settings in-app, persisted to TOML |
 | **CLI commands** | `sync` and `status` work without the TUI — pipe-friendly with ANSI output |
-| **XDG config** | Follows `$XDG_CONFIG_HOME` standard |
+| **XDG config** | Follows `$XDG_CONFIG_HOME` standard, see [configuration](config.md) |

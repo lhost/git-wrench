@@ -2,6 +2,9 @@
 
 A command-line tool for automating common Git tasks.
 
+- **[Documentation](https://git-wrench.dev)**
+- **[GitHub](https://github.com/lhost/git-wrench)**
+
 ---
 
 ## Features
@@ -25,174 +28,21 @@ pip install .
 pip install -e .
 ```
 
-> Requires Python ≥ 3.13. The `curses` module is part of the standard library.
+> Requires Python ≥ 3.14. The `curses` module is part of the standard library.
 
 ---
 
 ## Usage
 
-### Interactive TUI
+See the **[full documentation](https://git-wrench.dev)** for detailed usage of all commands:
 
-```
-git-wrench
-```
-
-Launches the full-screen interface.
-
-**Keyboard shortcuts:**
-
-| Key | Action |
+| Command | Docs |
 |---|---|
-| `Tab` / `Shift-Tab` | Switch between tabs (Repos / Config / Help) |
-| `↑` / `↓` | Move cursor |
-| `Enter` | Sync selected repo / edit config setting |
-| `a` | Sync **all** repos |
-| `r` | Refresh the repo list |
-| `q` / `Esc` | Quit |
-
-## Commands
-
-### sync — pull all repos
-
-```
-git-wrench sync
-git-wrench sync --path ~/my-workspace
-git-wrench sync --clean
-```
-
-| Flag | Description |
-|---|---|
-| `--path <dir>` | Scan a specific directory instead of configured workspaces |
-| `--clean` | Remove local repos not found on any configured server (prompts for confirmation) |
-
-For workspaces with git servers configured, `sync` also fetches the server's repo list, clones any missing repos, and warns about (or with `--clean`, removes) repos that exist locally but are no longer on the server.
-
-### status — repo overview table
-
-```
-git-wrench status
-git-wrench status --path ~/my-workspace
-```
-
-### branch — local branch management
-
-Both subcommands operate on the **current directory's repo** by default. Use `--workspace` to act across all configured workspaces, or `--path` to target a specific directory.
-
-#### branch gone
-
-```
-git-wrench branch gone
-git-wrench branch gone --workspace
-git-wrench branch gone --path ~/my-workspace
-git-wrench branch gone --force
-git-wrench branch gone --yes
-```
-
-Removes local branches whose remote tracking ref has been deleted (e.g. after a merged pull request is cleaned up on the server). Runs `git fetch --prune` first to refresh remote state, then lists all `[gone]` branches per repo and prompts for confirmation before deleting.
-
-| Flag | Description |
-|---|---|
-| `--workspace` | Act on all configured workspaces instead of the current repo |
-| `--path <dir>` | Act on a specific directory (scanned up to `recurse_depth`) |
-| `--force` | Delete with `-D` (removes even unmerged branches) |
-| `--yes` | Skip the confirmation prompt |
-
-#### branch rebase
-
-```
-git-wrench branch rebase
-git-wrench branch rebase --workspace
-git-wrench branch rebase --path ~/my-workspace
-git-wrench branch rebase --branch my-feature
-git-wrench branch rebase --dry-run
-```
-
-Rebases all local feature branches onto the first base branch found in the repo from `rebase.branches_order` (default: `develop`, `main`, `master`). Base branches themselves are skipped. On conflict the rebase is automatically aborted and the branch is left unchanged.
-
-| Flag | Description |
-|---|---|
-| `--workspace` | Act on all configured workspaces instead of the current repo |
-| `--path <dir>` | Act on a specific directory (scanned up to `recurse_depth`) |
-| `--branch <b>` | Rebase only this specific branch |
-| `--dry-run` | Show what would be rebased without making any changes |
-
-### workspace — manage workspaces
-
-```
-git-wrench workspace list
-git-wrench workspace add   <name> <path>
-git-wrench workspace rename <old-name> <new-name>
-git-wrench workspace remove <name>
-git-wrench workspace <name> list-servers
-git-wrench workspace <name> add-server --type <type> [--token <path>] <server-name> <url>
-git-wrench workspace <name> remove-server <server-name>
-git-wrench workspace <name> add-token <server-name>
-```
-
-### Help
-
-```
-git-wrench --help
-git-wrench --help <command>
-git-wrench <command> --help
-```
-
----
-
-## Configuration
-
-Config file is stored at:
-
-```
-~/.config/git-wrench/config.toml
-$XDG_CONFIG_HOME/git-wrench/config.toml   (if $XDG_CONFIG_HOME is set)
-```
-
-Created automatically with defaults on first run. Example:
-
-```toml
-[workspaces]
-paths = [
-    "~/projects",
-    "~/work",
-]
-
-[sync]
-recurse_depth = 2        # how deep to search for .git directories
-fetch_prune = true       # pass --prune to git fetch
-stash_before_pull = false
-
-[rebase]
-branches_order = ["develop", "main", "master"]   # first branch found locally is used as the rebase base
-```
-
-You can edit the file directly or use the **Config** tab in the TUI.
-
----
-
-## Project layout
-
-```
-├── bin
-│   └── git-wrench         - executable script
-├── git_wrench
-│   ├── commands
-│   │   ├── _ansi.py
-│   │   ├── __init__.py
-│   │   ├── branch.py
-│   │   ├── status.py
-│   │   ├── sync.py
-│   │   └── workspace.py
-│   ├── config.py          - TOML config load/save
-│   ├── git_ops.py         - repo discovery & git operations
-│   ├── __init__.py
-│   ├── registry.py
-│   ├── tui.py             - curses interactive interface
-│   └── workspace.py       - workspace management
-├── main.py                - CLI entrypoint
-├── Makefile               - Makefile for development
-├── pyproject.toml         - project metadata
-├── README.md
-├── tests
-│ └── test_cli.py
-```
+| Interactive TUI | [git-wrench.dev](https://git-wrench.dev) |
+| `sync` | [git-wrench.dev/workspace/sync/](https://git-wrench.dev/workspace/sync/) |
+| `status` | [git-wrench.dev/workspace/status/](https://git-wrench.dev/workspace/status/) |
+| `branch gone` | [git-wrench.dev/branch/gone/](https://git-wrench.dev/branch/gone/) |
+| `branch list` | [git-wrench.dev/branch/list/](https://git-wrench.dev/branch/list/) |
+| `branch rebase` | [git-wrench.dev/branch/rebase/](https://git-wrench.dev/branch/rebase/) |
+| `workspace` | [git-wrench.dev/workspace/](https://git-wrench.dev/workspace/) |
+| Configuration | [git-wrench.dev/config/](https://git-wrench.dev/config/) |
