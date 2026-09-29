@@ -264,7 +264,7 @@ mirror-doc-to-external:
 deploy-doc:
   stage: deploy
   needs:
-    - job: mirror-to-external
+    - job: mirror-doc-to-external
   <<: *ssh_setup
   script:
     # We fetch from the mirror on the server itself to keep it updated
