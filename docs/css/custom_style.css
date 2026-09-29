@@ -113,12 +113,26 @@ article > p:first-of-type {
 
 /* Links */
 .md-typeset a {
-  color: var(--accent-purple-light);
+  color: var(--accent-orange-light);
+  text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .md-typeset a:hover {
-  color: var(--accent-orange);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.md-typeset a code {
+  color: var(--accent-orange-light);
+  border-color: rgba(255, 170, 91, 0.45);
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.md-typeset a:hover code {
+  color: #ffffff;
+  border-color: var(--accent-orange);
+  background-color: rgba(255, 122, 0, 0.18);
 }
 
 /* 5. TABLES (CUSTOM CONTENT STYLING)
