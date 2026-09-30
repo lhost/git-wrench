@@ -186,6 +186,15 @@ test-audit:
 
 test:: test-format test-lint test-typecheck test-pytest test-secrets test-security test-audit test-build ## run tests
 
+itest integration-test:: ## run integration tests
+	git-wrench branch --help
+	git-wrench commit --help
+	git-wrench sync --help
+	git-wrench workspace --help
+	git-wrench status --help
+	git-wrench gone --help
+	git-wrench rebase --help
+
 test-build:
 	$(UV) $(MKDOCS) build --strict
 

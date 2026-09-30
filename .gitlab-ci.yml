@@ -5,6 +5,7 @@ stages:
   - build-ci-image
   - test
   - build
+  - test-packages
   - mirror
   - deploy
 
@@ -234,6 +235,26 @@ build-packages-rpm:
       - dist/rpmbuild/RPMS/
       - dist/rpmbuild/SRPMS/
     expire_in: never
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+# --- TEST PACKAGES STAGE ---
+test-packages-deb:
+  stage: test-packages
+  needs:
+    - job: build-packages-deb
+      artifacts: true
+  image: debian:trixie-slim
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+  script:
+    - apt-get update
+    - apt-get install -y ./dist/deb/*.deb
+    - which git-wrench
+    - git-wrench --help
+    - make integration-test
+
   rules:
     - if: $CI_COMMIT_BRANCH == "master"
     - if: $CI_COMMIT_BRANCH == "develop"
