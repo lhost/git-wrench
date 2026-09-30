@@ -323,3 +323,21 @@ deploy-doc:
         CONF_BRANCH: "master"
   rules:
     - if: $CI_COMMIT_BRANCH == $CONF_BRANCH
+
+trigger-downstream-pipeline:
+  stage: deploy
+  needs:
+    - job: build-packages-deb
+      artifacts: true
+    - job: test-packages-deb
+  trigger:
+    project: $DEBIAN_REPOSITORY_REPO
+    branch: master
+    strategy: depend
+  variables:
+    UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
+    UPSTREAM_PROJECT_ID: $CI_PROJECT_ID
+    UPSTREAM_COMMIT_REF_NAME: $CI_COMMIT_REF_NAME
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "develop"
