@@ -4,6 +4,9 @@
 
 A command-line tool for automating common Git tasks.
 
+- **[Documentation](https://git-wrench.dev)**
+- **[GitHub](https://github.com/lhost/git-wrench)**
+
 ---
 
 ## Features
