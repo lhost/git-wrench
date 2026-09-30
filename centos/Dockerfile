@@ -14,6 +14,7 @@ RUN dnf install -y \
         python3-installer \
         python3-hatchling \
         python3-pytest \
+        python3-tomli \
         python3-tomli-w \
         make \
         && \
