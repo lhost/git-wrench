@@ -90,6 +90,7 @@ upgrade-dev:
 wakemeops-keyring.asc:
 	curl -sSL https://raw.githubusercontent.com/upciti/wakemeops/main/assets/install_repository | \
 		sed -n '/-----BEGIN PGP PUBLIC KEY BLOCK-----/,/-----END PGP PUBLIC KEY BLOCK-----/p' > $@
+	chmod 644 $@
 
 dep: uv.lock requirements.txt
 
