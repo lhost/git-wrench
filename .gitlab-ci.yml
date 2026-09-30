@@ -253,7 +253,9 @@ test-packages-deb:
     - apt-get install -y ./dist/deb/*.deb
     - which git-wrench
     - git-wrench --help
-    - make integration-test
+    - dpkg -l git-wrench
+    - dpkg -L git-wrench
+    - apt-cache show git-wrench
 
   rules:
     - if: $CI_COMMIT_BRANCH == "master"
