@@ -302,6 +302,8 @@ deploy-doc:
         ssh-keyscan $TARGET_IP 2>/dev/null | ssh-keygen -lf - || true
         echo "Configured known_hosts entries:"
         ssh-keygen -lf ~/.ssh/known_hosts || true
+        echo "=============== SSH CONNECTION DEBUG: =================="
+        ssh -v $SERVER_USER@$TARGET_IP 'whoami; id -a; echo SSH_CONNECTION'
         exit 1
       fi
   parallel:
