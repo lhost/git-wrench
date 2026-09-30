@@ -298,14 +298,14 @@ deploy-doc:
   script:
     # We fetch from the mirror on the server itself to keep it updated
     - |
-      if ! ssh $SERVER_USER@$TARGET_IP "cd $WEB_ROOT && git fetch origin && git reset --hard origin/$TARGET_BRANCH"; then
+      if ! ssh -o BatchMode=yes -o IdentitiesOnly=no $SERVER_USER@$TARGET_IP "cd $WEB_ROOT && git fetch origin && git reset --hard origin/$TARGET_BRANCH"; then
         echo "ERROR: SSH connection to $SERVER_USER@$TARGET_IP failed."
         echo "Remote host key fingerprints for $TARGET_IP:"
         ssh-keyscan $TARGET_IP 2>/dev/null | ssh-keygen -lf - || true
         echo "Configured known_hosts entries:"
         ssh-keygen -lf ~/.ssh/known_hosts || true
         echo "=============== SSH CONNECTION DEBUG: =================="
-        ssh -v $SERVER_USER@$TARGET_IP 'whoami; id -a; echo SSH_CONNECTION'
+        ssh -v -o BatchMode=yes -o IdentitiesOnly=no $SERVER_USER@$TARGET_IP 'whoami; id -a; echo SSH_CONNECTION'
         exit 1
       fi
   parallel:
