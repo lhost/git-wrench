@@ -306,6 +306,8 @@ deploy-doc:
         ssh-keygen -lf ~/.ssh/known_hosts || true
         echo "=============== SSH CONNECTION DEBUG: =================="
         ssh -v -o BatchMode=yes -o IdentitiesOnly=no $SERVER_USER@$TARGET_IP 'whoami; id -a; echo SSH_CONNECTION'
+        echo "=============== SSH CONFIG: =================="
+        cat ~/.ssh/config
         exit 1
       fi
   parallel:
