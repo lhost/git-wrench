@@ -24,9 +24,13 @@ Example config.toml (~/.config/git-wrench/config.toml):
 from __future__ import annotations
 
 import os
-import tomllib
 from pathlib import Path
 from typing import Any
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib  # type: ignore[no-redef]
 
 import tomli_w
 

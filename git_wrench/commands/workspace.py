@@ -239,7 +239,7 @@ def _add_token(mgr, workspace_name: str, args: list[str]) -> int:
     # Prompt for the token (no echo).
     try:
         token = getpass.getpass(f"Token for server '{server_name}': ")
-    except KeyboardInterrupt, EOFError:
+    except (KeyboardInterrupt, EOFError):
         print("\nAborted.", file=sys.stderr)
         return 1
     if not token.strip():

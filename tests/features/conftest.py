@@ -8,8 +8,12 @@ isolated_config) are re-used unchanged where possible.
 
 from __future__ import annotations
 
-import tomllib
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 import pytest
 import tomli_w

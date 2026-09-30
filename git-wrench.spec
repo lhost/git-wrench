@@ -16,10 +16,12 @@ BuildRequires:  python3-build
 BuildRequires:  python3-installer
 BuildRequires:  python3-hatchling
 BuildRequires:  python3-pytest
+BuildRequires:  python3-tomli
 BuildRequires:  python3-tomli-w
 
 Requires:       git
 Requires:       python3
+Requires:       python3-tomli
 Requires:       python3-tomli-w
 
 %description
