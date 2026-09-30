@@ -112,7 +112,7 @@ extra:
     provider: mike
   analytics:
     provider: google
-    property: G-TODO
+    property: G-QV2XQPZ0RQ
   consent:
     title: Cookie consent
     description: >-
