@@ -332,7 +332,7 @@ trigger-downstream-pipeline:
     - job: test-packages-deb
   trigger:
     project: $DEBIAN_REPOSITORY_REPO
-    branch: master
+    branch: $CI_COMMIT_BRANCH
     strategy: depend
   variables:
     UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
